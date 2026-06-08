@@ -383,7 +383,8 @@ function showDashboard(acc) {
 // ── DATA ──
 
 // GRAPH API CONFIG
-const SITE_HOSTNAME = 'grupoginez.sharepoint.com';
+const SITE_ID = 'grupoginez.sharepoint.com,eb7ccd99-62a8-4ced-ad00-ac6e27f8b4b3,a1db8bfe-f2dd-4668-a7a5-0189fbad0c61';
+const DRIVE_ID = 'b!mc1866hi7UytAKxuJ_i0s_6L26Hd8mhGp6UBifutDGFnXme-tGE-QLyxfALDDF3N';
 const SITE_PATH = '/sites/compras.interno';
 const FILE_ID = '36D393B2-D8F0-422C-9E91-B4DF3EDBC4F9';
 const SHEET_NAME = 'MP';
@@ -408,28 +409,9 @@ async function loadExcelData() {
     const token = await getGraphToken();
     if (!token) return;
 
-    status.textContent = 'Obteniendo sitio...';
-    const siteRes = await fetch(
-      'https://graph.microsoft.com/v1.0/sites/' + SITE_HOSTNAME + ':' + SITE_PATH,
-      { headers: { Authorization: 'Bearer ' + token } }
-    );
-    const siteData = await siteRes.json();
-    const siteId = siteData.id;
-
-    status.textContent = 'Buscando biblioteca...';
-    const drivesRes = await fetch(
-      'https://graph.microsoft.com/v1.0/sites/' + siteId + '/drives',
-      { headers: { Authorization: 'Bearer ' + token } }
-    );
-    const drivesData = await drivesRes.json();
-    const drive = drivesData.value.find(function(d) {
-      return d.name === 'Documentos compartidos' || d.name === 'Documents';
-    });
-    const driveId = drive ? drive.id : drivesData.value[0].id;
-
     status.textContent = 'Leyendo Excel...';
     const sheetRes = await fetch(
-      'https://graph.microsoft.com/v1.0/sites/' + siteId + '/drives/' + driveId + '/items/' + FILE_ID + '/workbook/worksheets/' + SHEET_NAME + '/usedRange',
+      'https://graph.microsoft.com/v1.0/sites/' + SITE_ID + '/drives/' + DRIVE_ID + '/items/' + FILE_ID + '/workbook/worksheets/' + SHEET_NAME + '/usedRange',
       { headers: { Authorization: 'Bearer ' + token } }
     );
     const sheetData = await sheetRes.json();
