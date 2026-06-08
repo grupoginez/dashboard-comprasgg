@@ -443,7 +443,7 @@ function toDateStr(val) {
 }
 
 function parseExcelData(values) {
-  var headers = values[2].map(function(h) { return String(h).trim(); });
+  var headers = values[3].map(function(h) { return String(h).trim(); });
   var colIdx = {};
   headers.forEach(function(h, i) { colIdx[h] = i; });
 
@@ -451,7 +451,7 @@ function parseExcelData(values) {
   function val(row, name) { var i = col(name); return i >= 0 ? row[i] : ''; }
 
   var records = [];
-  for (var i = 3; i < values.length; i++) {
+  for (var i = 4; i < values.length; i++) {
     var row = values[i];
     var folio = String(val(row, 'FOLIO OC') || '').trim();
     if (!folio) continue;
