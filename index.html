@@ -349,8 +349,8 @@ const CLIENT_ID = "5cbee9d4-0574-49fb-8d63-fcac84bfa44d";
 const TENANT_ID = "d08c56ca-3b55-42db-b365-359cf1503e4e";
 
 const msalCfg = {
-  auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/" + TENANT_ID, redirectUri: "https://grupoginez.github.io/dashboard-comprasgg/", //('?')[0] },
-  cache: { cacheLocation: "sessionStorage" }
+  auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/" + TENANT_ID, redirectUri: "https://grupoginez.github.io/dashboard-comprasgg/" },
+  cache: { cacheLocation: "localStorage" }
 };
 const msalApp = new msal.PublicClientApplication(msalCfg);
 
