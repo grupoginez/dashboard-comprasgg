@@ -356,18 +356,19 @@ const msalApp = new msal.PublicClientApplication(msalCfg);
 
 async function login() {
   try {
-    const r = await msalApp.loginPopup({ scopes: ["User.Read"] });
-    showDashboard(r.account);
+    await msalApp.loginRedirect({ scopes: ["User.Read"] });
+    
   } catch(e) {
     document.getElementById('login-err').style.display = 'block';
   }
 }
-function logout() { msalApp.logoutPopup(); location.reload(); }
+function logout() { msalApp.logoutRedirect(); }
 
 msalApp.handleRedirectPromise().then(r => {
+  if (r && r.account) { showDashboard(r.account); return; }
   const accs = msalApp.getAllAccounts();
   if (accs.length) showDashboard(accs[0]);
-}).catch(()=>{});
+}).catch(e => console.error(e));
 
 function showDashboard(acc) {
   document.getElementById('login-screen').style.display = 'none';
