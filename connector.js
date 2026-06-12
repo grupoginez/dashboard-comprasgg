@@ -23,17 +23,19 @@ async function login() {
 function logout() { msalApp.logoutRedirect(); }
 
 function handleAuthResult(r) {
+  const loginEl = document.getElementById('login-section');
+  if (!loginEl) {
+    // DOM aun no listo, reintentar
+    setTimeout(() => handleAuthResult(r), 50);
+    return;
+  }
   if (r && r.account) { showDashboard(r.account); return; }
   const accs = msalApp.getAllAccounts();
   if (accs.length) showDashboard(accs[0]);
 }
 
 msalApp.handleRedirectPromise().then(r => {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => handleAuthResult(r));
-  } else {
-    handleAuthResult(r);
-  }
+  handleAuthResult(r);
 }).catch(e => console.error(e));
 
 function showDashboard(acc) {
