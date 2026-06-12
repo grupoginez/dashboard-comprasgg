@@ -22,10 +22,18 @@ async function login() {
 }
 function logout() { msalApp.logoutRedirect(); }
 
-msalApp.handleRedirectPromise().then(r => {
+function handleAuthResult(r) {
   if (r && r.account) { showDashboard(r.account); return; }
   const accs = msalApp.getAllAccounts();
   if (accs.length) showDashboard(accs[0]);
+}
+
+msalApp.handleRedirectPromise().then(r => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => handleAuthResult(r));
+  } else {
+    handleAuthResult(r);
+  }
 }).catch(e => console.error(e));
 
 function showDashboard(acc) {
