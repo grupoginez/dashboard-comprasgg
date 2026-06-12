@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Compras — Grupo Ginez</title>
+<title>Dashboard Compras — Grupo Ginez</title>
 <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -32,18 +32,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13
 ::-webkit-scrollbar-track{background:var(--surf)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
-
-/* ── LOGIN ── */
-#login-section{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center;padding:20px}
-.login-logo{width:64px;height:64px;background:var(--accent);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;font-weight:800;box-shadow:var(--shadow)}
-.login-title{font-size:20px;font-weight:700}
-.login-sub{font-size:12px;color:var(--text3);max-width:340px;line-height:1.6}
-.login-btn{display:flex;align-items:center;gap:10px;padding:11px 22px;background:var(--accent);color:#fff;border:none;border-radius:var(--r8);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity .15s}
-.login-btn:hover{opacity:.88}
-#login-err{display:none;color:var(--acc3);font-size:11px;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.3);padding:8px 14px;border-radius:var(--r8)}
-#load-status{font-size:11px;color:var(--text3);min-height:16px}
-
-/* ── HEADER ── */
+/* HEADER */
 .hdr{background:var(--surf);border-bottom:1px solid var(--border);padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;box-shadow:var(--shadow)}
 .hlogo{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;color:#fff;font-weight:800}
 .hdr h1{font-size:14px;font-weight:700;color:var(--text)}
@@ -61,10 +50,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13
 .btn-hdr{display:flex;align-items:center;gap:4px;padding:5px 11px;border-radius:var(--r8);border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;font-family:var(--font);transition:all .15s}
 .btn-hdr:hover{border-color:var(--acc2);color:var(--acc2)}
 .btn-hdr.active{background:rgba(92,124,250,.15);border-color:var(--accent);color:var(--accent)}
-.uchip{display:flex;align-items:center;gap:7px;padding:4px 11px 4px 4px;background:var(--card2);border:1px solid var(--border);border-radius:20px}
-.uavatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
-.uname{font-size:11px;font-weight:600;color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
 /* FILTER BAR */
 .fbar{background:var(--surf);border-bottom:1px solid var(--border);padding:9px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;position:sticky;top:96px;z-index:190;box-shadow:0 2px 8px rgba(0,0,0,.10);transition:box-shadow .2s}
 .fbar.frozen{box-shadow:0 4px 16px rgba(0,0,0,.30)!important}
@@ -170,8 +155,6 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 /* Price section specific */
 .price-tag-mxn{color:var(--acc4);font-weight:700}
 .price-tag-usd{color:var(--acc5);font-weight:700}
-/* Pending status */
-.price-tag-pend{color:var(--text3);font-weight:700}
 
 /* ── QUICK NAV ── */
 .qnav-wrap{position:relative;flex-shrink:0}
@@ -198,58 +181,71 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 .sheet-tab-ico{font-size:14px}
 .sheet-tab-count{font-size:9px;background:var(--card2);color:var(--text3);padding:1px 5px;border-radius:8px;margin-left:2px}
 .sheet-tab.active .sheet-tab-count{background:rgba(92,124,250,.15);color:var(--accent)}
+
+/* ── LOGIN ── */
+#login-section{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center;padding:20px}
+.login-logo{width:64px;height:64px;background:var(--accent);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;font-weight:800;box-shadow:var(--shadow)}
+.login-title{font-size:20px;font-weight:700}
+.login-sub{font-size:12px;color:var(--text3);max-width:340px;line-height:1.6}
+.login-btn{display:flex;align-items:center;gap:10px;padding:11px 22px;background:var(--accent);color:#fff;border:none;border-radius:var(--r8);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+.login-btn:hover{opacity:.88}
+#login-err{display:none;color:var(--acc3);font-size:11px;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.3);padding:8px 14px;border-radius:var(--r8)}
+#load-status{font-size:11px;color:var(--text3);min-height:16px;text-align:center;padding:4px 20px;background:var(--card2);border-bottom:1px solid var(--border)}
+.uchip{display:flex;align-items:center;gap:7px;padding:4px 11px 4px 4px;background:var(--card2);border:1px solid var(--border);border-radius:20px}
+.uavatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
+.uname{font-size:11px;font-weight:600;color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 </head>
 <body>
 
-<!-- ════════ LOGIN ════════ -->
+<!-- ══ LOGIN ══ -->
 <div id="login-section">
-  <div class="login-logo">GG</div>
-  <div class="login-title">Dashboard de Compras — Grupo Ginez</div>
-  <div class="login-sub">Inicia sesión con tu cuenta de Microsoft 365 para cargar los datos de compras desde SharePoint en tiempo real.</div>
+  <div class="login-logo">📦</div>
+  <div class="login-title">Dashboard de Compras</div>
+  <div class="login-sub">Grupo Ginez &middot; Accede con tu cuenta Microsoft 365 para consultar la información actualizada desde SharePoint.</div>
   <button class="login-btn" onclick="login()">
-    <svg width="18" height="18" viewBox="0 0 23 23" fill="none"><path d="M0 0H11V11H0V0Z" fill="#F25022"/><path d="M12 0H23V11H12V0Z" fill="#7FBA00"/><path d="M0 12H11V23H0V12Z" fill="#00A4EF"/><path d="M12 12H23V23H12V12Z" fill="#FFB900"/></svg>
+    <svg width="18" height="18" viewBox="0 0 21 21" fill="none">
+      <rect width="10" height="10" fill="#f25022"/><rect x="11" width="10" height="10" fill="#7fba00"/>
+      <rect y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/>
+    </svg>
     Iniciar sesión con Microsoft
   </button>
-  <div id="login-err">No se pudo iniciar sesión. Intenta de nuevo o contacta a TI.</div>
-  <div id="load-status"></div>
+  <div id="login-err">Error al iniciar sesión. Intenta de nuevo.</div>
 </div>
 
-<!-- ════════ DASHBOARD ════════ -->
+<!-- ══ DASHBOARD ══ -->
 <div id="dashboard-section" style="display:none">
+<div id="load-status"></div>
 
-<!-- HEADER -->
 <header class="hdr">
-  <div class="hlogo">GG</div>
+  <div class="hlogo">MP</div>
   <div>
-    <h1>Compras — Análisis de Materias Primas e Insumos</h1>
-    <div class="hdr-sub">Solo COMPLETO · Fecha Entrega Real · IMPORTE DE MAT. ENTREGADO</div>
+    <h1>Materias Primas — Análisis de Compras</h1>
+    <div class="hdr-sub">Solo COMPLETO · Fecha Entrega Real · IMPORTE DE MAT. ENTREGADO · 2022–2026</div>
   </div>
   <div class="hdr-r">
+    <div class="uchip" id="user-chip" style="display:none">
+      <div class="uavatar" id="uavatar"></div>
+      <span class="uname" id="uname"></span>
+    </div>
+    <button class="btn-hdr" onclick="logout()" title="Cerrar sesión">⎋ Salir</button>
     <div class="fbadge" id="fbadge">🔍 <span id="fbadge-n">0</span> filtro(s)</div>
     <div class="sw" onclick="toggleTheme()">
       <div class="sw-t" id="sw-t"><div class="sw-th"></div></div>
       <span class="sw-lbl" id="sw-l">☀️ Claro</span>
     </div>
     <button class="btn-hdr" id="freeze-btn" onclick="toggleFreeze()">📌 Fijar filtros</button>
-    <button class="btn-hdr" onclick="reloadData()">🔄 Recargar</button>
     <button class="btn-hdr" onclick="exportCSV()">⬇ CSV</button>
-    <div class="uchip">
-      <div class="uavatar" id="uavatar">--</div>
-      <span class="uname" id="uname">—</span>
-    </div>
-    <button class="btn-hdr" onclick="logout()">Salir</button>
   </div>
 </header>
-<div id="load-status-bar" style="text-align:center;font-size:10px;color:var(--text3);padding:3px;min-height:14px"></div>
 
 <!-- SHEET TABS -->
 <div class="sheet-tabs" id="sheet-tabs">
-  <button class="sheet-tab active" id="stab-MP" onclick="switchSheet('MP')"><span class="sheet-tab-ico">🧪</span>Materias Primas<span class="sheet-tab-count" id="stab-count-MP">—</span></button>
-  <button class="sheet-tab" id="stab-PIGMENTOS" onclick="switchSheet('PIGMENTOS')"><span class="sheet-tab-ico">🎨</span>Pigmentos<span class="sheet-tab-count" id="stab-count-PIGMENTOS">—</span></button>
-  <button class="sheet-tab" id="stab-FRAGANCIAS" onclick="switchSheet('FRAGANCIAS')"><span class="sheet-tab-ico">🌸</span>Fragancias<span class="sheet-tab-count" id="stab-count-FRAGANCIAS">—</span></button>
-  <button class="sheet-tab" id="stab-PIPAS" onclick="switchSheet('PIPAS')"><span class="sheet-tab-ico">🛢️</span>Pipas<span class="sheet-tab-count" id="stab-count-PIPAS">—</span></button>
-  <button class="sheet-tab" id="stab-OTROS" onclick="switchSheet('OTROS')"><span class="sheet-tab-ico">📦</span>Otros<span class="sheet-tab-count" id="stab-count-OTROS">—</span></button>
+  <button class="sheet-tab active" id="stab-MP" onclick="switchSheet('MP')"><span class="sheet-tab-ico">🧪</span>Materias Primas<span class="sheet-tab-count">1,189</span></button>
+  <button class="sheet-tab" id="stab-PIGMENTOS" onclick="switchSheet('PIGMENTOS')"><span class="sheet-tab-ico">🎨</span>Pigmentos<span class="sheet-tab-count">122</span></button>
+  <button class="sheet-tab" id="stab-FRAGANCIAS" onclick="switchSheet('FRAGANCIAS')"><span class="sheet-tab-ico">🌸</span>Fragancias<span class="sheet-tab-count">7,443</span></button>
+  <button class="sheet-tab" id="stab-PIPAS" onclick="switchSheet('PIPAS')"><span class="sheet-tab-ico">🛢️</span>Pipas<span class="sheet-tab-count">3,723</span></button>
+  <button class="sheet-tab" id="stab-OTROS" onclick="switchSheet('OTROS')"><span class="sheet-tab-ico">📦</span>Otros<span class="sheet-tab-count">119</span></button>
 </div>
 <!-- FILTER BAR -->
 <div class="fbar" id="fbar">
@@ -263,14 +259,6 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
       <button class="cur-b active" id="cbtn-MXN" onclick="setCur('MXN')">MXN</button>
       <button class="cur-b"        id="cbtn-USD" onclick="setCur('USD')">USD</button>
       <button class="cur-b"        id="cbtn-ALL" onclick="setCur('ALL')">Ambas</button>
-    </div>
-  </div>
-  <div class="fg">
-    <div class="fg-l">📦 Estatus entrega</div>
-    <div class="cur-seg">
-      <button class="cur-b active" id="ebtn-ALL" onclick="setEnt('ALL')">Todos</button>
-      <button class="cur-b"        id="ebtn-ENT" onclick="setEnt('ENT')">Entregados</button>
-      <button class="cur-b"        id="ebtn-PEN" onclick="setEnt('PEN')">Pendientes</button>
     </div>
   </div>
   <div class="fg">
@@ -288,7 +276,7 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
         <button class="qnav-item" onclick="navTo('wrap-s3')"><span class="qnav-ico">🏭</span><span class="qnav-lbl">3. Participación Proveedores</span></button>
         <button class="qnav-item" onclick="navTo('wrap-s4')"><span class="qnav-ico">📈</span><span class="qnav-lbl">4. Evolución Proveedores</span></button>
         <button class="qnav-item" onclick="navTo('wrap-s5')"><span class="qnav-ico">📦</span><span class="qnav-lbl">5. Evolución Materias</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s5b')"><span class="qnav-ico">💲</span><span class="qnav-lbl">5b. Precios por Material</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s5b')"><span class="qnav-ico">💲</span><span class="qnav-lbl">5b. Precios por Material</span><span class="qnav-badge">nuevo</span></button>
         <button class="qnav-item" onclick="navTo('wrap-s6')"><span class="qnav-ico">🧾</span><span class="qnav-lbl">6. Órdenes de Compra</span></button>
         <button class="qnav-item" onclick="navTo('wrap-s7')"><span class="qnav-ico">📊</span><span class="qnav-lbl">7. Variación OC vs Entrega</span></button>
         <button class="qnav-item" onclick="navTo('wrap-s8')"><span class="qnav-ico">⏱️</span><span class="qnav-lbl">8. Tiempos de Entrega</span></button>
@@ -420,17 +408,19 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
   <div class="sec-body" id="body-s5b" style="padding-top:10px">
     <div class="gf card">
       <div class="ch">
-        <div><div class="ct">Evolución mensual de PRECIO UNITARIO — Top materias</div><div class="cs">Precio en moneda original del registro · MXN en <span class="price-tag-mxn">amarillo</span> · USD en <span class="price-tag-usd">azul</span></div></div>
+        <div><div class="ct">Evolución mensual de PRECIO UNITARIO — Top materias</div><div class="cs">PRECIO UNITARIO <strong style="color:var(--acc2)">sin IVA</strong> · en moneda original · MXN <span class="price-tag-mxn">■</span> · USD <span class="price-tag-usd">■</span></div></div>
         <div class="ca">
           <div class="msr" id="msr-pm"><div class="mst" id="mst-pm" onclick="toggleDD('pm')" style="min-width:140px"><span class="mst-tx" id="mtx-pm">Top 5 materias</span><span class="mst-ct" id="mct-pm"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-pm"></div></div>
         </div>
       </div>
       <div style="height:300px;position:relative"><canvas id="ch-price"></canvas></div>
     </div>
+    <!-- Stats table -->
     <div class="gf card">
-      <div class="ch"><div><div class="ct">Estadísticas de precio por material</div><div class="cs">Mín · Máx · Prom · Variación % por periodo</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-price')">⬇ CSV</button></div></div>
+      <div class="ch"><div><div class="ct">Estadísticas de precio por material</div><div class="cs">PRECIO UNITARIO sin IVA · Mín · Máx · Prom ponderado · Variación %</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-price')">⬇ CSV</button></div></div>
       <div class="tw" style="max-height:320px"><table id="tbl-price"></table></div>
     </div>
+    <!-- Annual variation -->
     <div class="gf card">
       <div class="ch"><div><div class="ct">Precio promedio anual por material — variación %</div><div class="cs">Precio unitario promedio ponderado por cantidad entregada</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-price-yr')">⬇ CSV</button></div></div>
       <div class="tw" style="max-height:280px"><table id="tbl-price-yr"></table></div>
