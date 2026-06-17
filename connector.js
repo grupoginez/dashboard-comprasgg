@@ -8,7 +8,7 @@ const TENANT_ID = "d08c56ca-3b55-42db-b365-359cf1503e4e";
 
 const msalCfg = {
   auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/" + TENANT_ID, redirectUri: "https://grupoginez.github.io/dashboard-comprasgg/" },
-  cache: { cacheLocation: "localStorage" }
+  cache: { cacheLocation: "sessionStorage" }
 };
 const msalApp = new msal.PublicClientApplication(msalCfg);
 
