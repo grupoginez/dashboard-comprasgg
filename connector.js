@@ -1,177 +1,511 @@
-// ============================================================
-// connector.js -- Conexion MS365 / SharePoint / Graph API
-// Módulo de autenticación y conexión a fuentes de datos
-// ============================================================
-
-const CLIENT_ID = "5cbee9d4-0574-49fb-8d63-fcac84bfa44d";
-const TENANT_ID = "d08c56ca-3b55-42db-b365-359cf1503e4e";
-
-const msalCfg = {
-  auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/" + TENANT_ID, redirectUri: "https://grupoginez.github.io/dashboard-comprasgg/" },
-  cache: { cacheLocation: "localStorage" }
-};
-const msalApp = new msal.PublicClientApplication(msalCfg);
-
-async function login() {
-  try {
-    await msalApp.loginRedirect({ scopes: ["User.Read"] });
-  } catch(e) {
-    document.getElementById('login-err').style.display = 'block';
-  }
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://alcdn.msauth.net https://cdnjs.cloudflare.com; connect-src https://login.microsoftonline.com https://graph.microsoft.com; frame-src https://login.microsoftonline.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://login.microsoftonline.com;">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Dashboard Compras — Grupo Ginez</title>
+<script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
+  integrity="sha384-bs/nf9FbdNouRbMiFcrcZfLXYPKiPaGVGplVbv7dLGECccEXDW+S3zjqSKR5ZEaD"
+  crossorigin="anonymous"></script>
+<style>
+:root{--r6:6px;--r8:8px;--r10:10px;--font:'Segoe UI',system-ui,sans-serif}
+[data-theme="dark"]{
+  --bg:#0d1117;--surf:#161b22;--card:#1c2230;--card2:#222a3a;
+  --border:#2d3548;--border2:#3d4560;
+  --text:#e4e8f5;--text2:#8a95b0;--text3:#5a6380;
+  --accent:#5c7cfa;--acc2:#20c997;--acc3:#ff5c5c;--acc4:#fcc419;--acc5:#4dabf7;
+  --kg:#a29bfe;--lt:#20c997;--neto:#fcc419;
+  --inp:#1c2230;--inp-b:#2d3548;
+  --shadow:0 4px 20px rgba(0,0,0,.35)
 }
-function logout() { msalApp.logoutRedirect(); }
-
-function handleAuthResult(r) {
-  const loginEl = document.getElementById('login-section');
-  if (!loginEl) {
-    // DOM aun no listo, reintentar
-    setTimeout(() => handleAuthResult(r), 50);
-    return;
-  }
-  if (r && r.account) { showDashboard(r.account); return; }
-  const accs = msalApp.getAllAccounts();
-  if (accs.length) showDashboard(accs[0]);
+[data-theme="light"]{
+  --bg:#f0f3fa;--surf:#ffffff;--card:#ffffff;--card2:#f5f7fd;
+  --border:#dce3f0;--border2:#c8d3ea;
+  --text:#1a2035;--text2:#3d5080;--text3:#6878a0;
+  --accent:#4263eb;--acc2:#0ca678;--acc3:#c92a2a;--acc4:#e67700;--acc5:#1971c2;
+  --kg:#4263eb;--lt:#0ca678;--neto:#e67700;
+  --inp:#f0f3fa;--inp-b:#c8d3ea;
+  --shadow:0 2px 12px rgba(0,0,0,.10)
 }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;transition:background .25s,color .25s}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surf)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+/* HEADER */
+.hdr{background:var(--surf);border-bottom:1px solid var(--border);padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;box-shadow:var(--shadow)}
+.hlogo{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;color:#fff;font-weight:800}
+.hdr h1{font-size:14px;font-weight:700;color:var(--text)}
+.hdr-sub{font-size:9px;color:var(--text3);margin-top:1px}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.fbadge{background:rgba(92,124,250,.15);border:1px solid rgba(92,124,250,.35);color:var(--accent);padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;display:none}
+.fbadge.show{display:flex;align-items:center;gap:4px}
+.sw{display:flex;align-items:center;gap:7px;padding:5px 11px;background:var(--card2);border:1px solid var(--border);border-radius:20px;cursor:pointer;user-select:none;transition:border .15s}
+.sw:hover{border-color:var(--accent)}
+.sw-t{width:34px;height:18px;border-radius:9px;background:var(--border2);position:relative;flex-shrink:0;transition:background .25s}
+.sw-t.on{background:var(--accent)}
+.sw-th{width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .25s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw-t.on .sw-th{left:18px}
+.sw-lbl{font-size:10px;font-weight:600;color:var(--text2)}
+.btn-hdr{display:flex;align-items:center;gap:4px;padding:5px 11px;border-radius:var(--r8);border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;font-family:var(--font);transition:all .15s}
+.btn-hdr:hover{border-color:var(--acc2);color:var(--acc2)}
+.btn-hdr.active{background:rgba(92,124,250,.15);border-color:var(--accent);color:var(--accent)}
+/* FILTER BAR */
+.fbar{background:var(--surf);border-bottom:1px solid var(--border);padding:9px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;position:sticky;top:96px;z-index:190;box-shadow:0 2px 8px rgba(0,0,0,.10);transition:box-shadow .2s}
+.fbar.frozen{box-shadow:0 4px 16px rgba(0,0,0,.30)!important}
+[data-theme="light"] .fbar.frozen{box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg-l{font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+/* Multi-select */
+.msr{position:relative}
+.mst{display:flex;align-items:center;gap:6px;padding:6px 9px;background:var(--inp);border:1px solid var(--inp-b);border-radius:var(--r8);cursor:pointer;min-width:130px;max-width:190px;transition:border .15s;user-select:none}
+.mst:hover,.mst.open{border-color:var(--accent)}
+.mst-tx{flex:1;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mst-ct{background:var(--accent);color:#fff;border-radius:10px;padding:1px 5px;font-size:9px;font-weight:700;display:none}
+.mst-ar{color:var(--text3);font-size:10px;transition:transform .15s}
+.mst.open .mst-ar{transform:rotate(180deg)}
+.msd{position:absolute;top:calc(100%+3px);left:0;background:var(--surf);border:1px solid var(--border2);border-radius:var(--r10);z-index:500;min-width:200px;max-width:280px;box-shadow:var(--shadow);display:none;overflow:hidden}
+.msd-s{padding:7px 9px;border-bottom:1px solid var(--border)}
+.msd-s input{width:100%;background:var(--inp);border:1px solid var(--inp-b);border-radius:var(--r6);color:var(--text);padding:5px 8px;font-size:11px;outline:none;font-family:var(--font)}
+.msd-s input::placeholder{color:var(--text3)}
+.msd-s input:focus{border-color:var(--accent)}
+.msd-l{max-height:220px;overflow-y:auto;padding:3px 0}
+.mso{display:flex;align-items:center;gap:7px;padding:6px 11px;cursor:pointer;font-size:11px;color:var(--text2);transition:background .1s}
+.mso:hover{background:var(--card2);color:var(--text)}
+.mso input[type=checkbox]{accent-color:var(--accent);width:12px;height:12px;cursor:pointer;flex-shrink:0}
+.mso-l{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mso-all{border-bottom:1px solid var(--border);font-weight:700}
+.msd-f{padding:5px 9px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+/* Currency */
+.cur-seg{display:flex;background:var(--inp);border:1px solid var(--inp-b);border-radius:var(--r8);overflow:hidden}
+.cur-b{padding:6px 11px;border:none;background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.cur-b.active{background:var(--accent);color:#fff}
+/* Chips */
+.chips{background:var(--surf);border-bottom:1px solid var(--border);padding:4px 20px;display:flex;flex-wrap:wrap;gap:4px;min-height:0;transition:top .15s}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.cy{background:rgba(77,171,247,.12);border:1px solid rgba(77,171,247,.3);color:var(--acc5)}
+.cp{background:rgba(32,201,151,.1);border:1px solid rgba(32,201,151,.3);color:var(--acc2)}
+.cm{background:rgba(252,196,25,.1);border:1px solid rgba(252,196,25,.3);color:var(--acc4)}
+.chipx{opacity:.5;cursor:pointer;margin-left:1px}
+.chipx:hover{opacity:1}
+/* Btn */
+.btn-sm{padding:6px 11px;border-radius:var(--r8);border:1px solid var(--inp-b);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm.on{background:rgba(92,124,250,.15);border-color:var(--accent);color:var(--accent);font-weight:700}
+/* PAGE */
+.page{padding:16px 20px;flex:1}
+/* SECTION */
+.sec-wrap{margin-bottom:12px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 0 7px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.sec-hdr:hover .sec-tog{color:var(--accent)}
+.sec-ttl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;display:flex;align-items:center;gap:7px}
+.sec-tog{font-size:12px;color:var(--text3);transition:transform .2s}
+.sec-tog.open{transform:rotate(0deg)}
+.sec-tog.closed{transform:rotate(-90deg)}
+.sec-body{overflow:hidden;transition:all .2s}
+.sec-body.hidden{display:none}
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:12px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r10);padding:11px 13px;position:relative;overflow:hidden;transition:background .25s,border .25s}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
+.kpi.g::before{background:var(--acc2)}.kpi.y::before{background:var(--acc4)}.kpi.r::before{background:var(--acc3)}.kpi.b::before{background:var(--acc5)}
+.kpi-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;font-weight:700}
+.kpi-v{font-size:19px;font-weight:700;line-height:1;color:var(--text)}
+.kpi-s{font-size:9px;color:var(--text3);margin-top:2px}
+/* Grid */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.gf{margin-bottom:12px}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+/* Card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r10);padding:13px;transition:background .25s,border .25s}
+.ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px}
+.ct{font-size:11px;font-weight:700;color:var(--text)}
+.cs{font-size:10px;color:var(--text3);margin-top:2px}
+.ca{display:flex;gap:5px;align-items:center;flex-shrink:0;flex-wrap:wrap}
+/* Table */
+.tw{overflow-x:auto;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead{position:sticky;top:0;z-index:2}
+thead th{background:var(--card2);color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--text)}
+thead th.tl{text-align:left}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:var(--card2)}
+tbody td{padding:5px 8px;text-align:right;color:var(--text)}
+tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.tfr{background:var(--card2)!important;font-weight:700}
+/* Misc */
+.pill{display:inline-block;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700}
+.p-ok{background:rgba(32,201,151,.15);color:var(--acc2)}
+.p-ov{background:rgba(92,124,250,.15);color:var(--accent)}
+.p-pa{background:rgba(252,196,25,.15);color:var(--acc4)}
+.p-no{background:rgba(255,92,92,.15);color:var(--acc3)}
+.det-btn{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:var(--r6);border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;font-family:var(--font);transition:all .15s}
+.det-btn:hover{border-color:var(--accent);color:var(--accent)}
+.det-pane{display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px}
+.det-pane.open{display:block}
+.tm-wrap{display:flex;flex-wrap:wrap;gap:3px;padding:3px;min-height:80px}
+.tm-cell{display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:9px;font-weight:700;color:#fff;overflow:hidden;cursor:default;text-shadow:0 1px 2px rgba(0,0,0,.6);padding:2px;text-align:center;line-height:1.2}
+.kgc{color:var(--kg)}.ltc{color:var(--lt)}.nc{color:var(--neto)}
+.gp{color:var(--acc2);font-weight:700}.gn{color:var(--acc3);font-weight:700}
+.rank{color:var(--acc4);font-weight:700;min-width:17px;display:inline-block}
+.bi{display:inline-block;height:4px;border-radius:2px;vertical-align:middle;margin-left:4px}
+/* Price section specific */
+.price-tag-mxn{color:var(--acc4);font-weight:700}
+.price-tag-usd{color:var(--acc5);font-weight:700}
 
-msalApp.handleRedirectPromise().then(r => {
-  handleAuthResult(r);
-}).catch(e => console.error(e));
+/* ── QUICK NAV ── */
+.qnav-wrap{position:relative;flex-shrink:0}
+.qnav-trigger{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--inp);border:1px solid var(--inp-b);border-radius:var(--r8);cursor:pointer;user-select:none;transition:border .15s,color .15s;white-space:nowrap;font-size:11px;font-weight:700;color:var(--text2)}
+.qnav-trigger:hover,.qnav-trigger.open{border-color:var(--accent);color:var(--accent)}
+.qnav-trigger-arr{font-size:9px;transition:transform .18s}
+.qnav-trigger.open .qnav-trigger-arr{transform:rotate(180deg)}
+.qnav{position:absolute;top:calc(100% + 5px);left:0;background:var(--surf);border:1px solid var(--border2);border-radius:var(--r10);z-index:600;min-width:230px;box-shadow:var(--shadow);display:none;padding:5px}
+.qnav.open{display:block}
+.qnav-sec{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;padding:6px 10px 3px}
+.qnav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r8);cursor:pointer;transition:background .12s;font-size:11px;font-weight:500;color:var(--text2);border:none;background:transparent;font-family:var(--font);width:100%;text-align:left}
+.qnav-item:hover{background:var(--card2);color:var(--text)}
+.qnav-item.active{background:rgba(92,124,250,.13);color:var(--accent);font-weight:700}
+.qnav-ico{font-size:13px;flex-shrink:0;width:20px;text-align:center}
+.qnav-lbl{flex:1}
+.qnav-badge{font-size:9px;font-weight:700;color:var(--text3);background:var(--card2);padding:1px 5px;border-radius:6px;margin-left:2px}
 
-function showDashboard(acc) {
-  document.getElementById('login-section').style.display = 'none';
-  document.getElementById('dashboard-section').style.display = 'block';
-  const n = acc.name || acc.username;
-  document.getElementById('uname').textContent = n;
-  document.getElementById('uavatar').textContent = n.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
-  loadExcelData();
-}
+/* ── SHEET TABS ── */
+.sheet-tabs{background:var(--surf);border-bottom:2px solid var(--border);padding:0 20px;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;position:sticky;top:54px;z-index:196}
+.sheet-tabs::-webkit-scrollbar{display:none}
+.sheet-tab{display:flex;align-items:center;gap:6px;padding:11px 18px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s;white-space:nowrap;user-select:none;border-radius:0;background:transparent;border-top:none;border-left:none;border-right:none;font-family:var(--font)}
+.sheet-tab:hover{color:var(--text)}
+.sheet-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.sheet-tab-ico{font-size:14px}
+.sheet-tab-count{font-size:9px;background:var(--card2);color:var(--text3);padding:1px 5px;border-radius:8px;margin-left:2px}
+.sheet-tab.active .sheet-tab-count{background:rgba(92,124,250,.15);color:var(--accent)}
 
-// -- GRAPH API CONFIG --
-const SITE_ID = 'grupoginez.sharepoint.com,eb7ccd99-62a8-4ced-ad00-ac6e27f8b4b3,a1db8bfe-f2dd-4668-a7a5-0189fbad0c61';
-const DRIVE_ID = 'b!mc1866hi7UytAKxuJ_i0s_6L26Hd8mhGp6UBifutDGFnXme-tGE-QLyxfALDDF3N';
-const FILE_ID = 'F6B14DAE-88ED-4CAD-B9A5-D9D3BCBF9509';
-const SHEET_NAMES = ['MP', 'PIGMENTOS', 'FRAGANCIAS', 'PIPAS', 'OTROS'];
+/* ── LOGIN ── */
+#login-section{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center;padding:20px}
+.login-logo{width:64px;height:64px;background:var(--accent);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;font-weight:800;box-shadow:var(--shadow)}
+.login-title{font-size:20px;font-weight:700}
+.login-sub{font-size:12px;color:var(--text3);max-width:340px;line-height:1.6}
+.login-btn{display:flex;align-items:center;gap:10px;padding:11px 22px;background:var(--accent);color:#fff;border:none;border-radius:var(--r8);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+.login-btn:hover{opacity:.88}
+#login-err{display:none;color:var(--acc3);font-size:11px;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.3);padding:8px 14px;border-radius:var(--r8)}
+#load-status{font-size:11px;color:var(--text3);min-height:16px;text-align:center;padding:4px 20px;background:var(--card2);border-bottom:1px solid var(--border)}
+.uchip{display:flex;align-items:center;gap:7px;padding:4px 11px 4px 4px;background:var(--card2);border:1px solid var(--border);border-radius:20px}
+.uavatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
+.uname{font-size:11px;font-weight:600;color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
+</head>
+<body>
 
-// RAW_BY_SHEET = { MP: [...], PIGMENTOS: [...], FRAGANCIAS: [...], PIPAS: [...], OTROS: [...] }
-let RAW_BY_SHEET = {};
+<!-- ══ LOGIN ══ -->
+<div id="login-section">
+  <div class="login-logo">📦</div>
+  <div class="login-title">Dashboard de Compras</div>
+  <div class="login-sub">Grupo Ginez &middot; Accede con tu cuenta Microsoft 365 para consultar la información actualizada desde SharePoint.</div>
+  <button class="login-btn" onclick="login()">
+    <svg width="18" height="18" viewBox="0 0 21 21" fill="none">
+      <rect width="10" height="10" fill="#f25022"/><rect x="11" width="10" height="10" fill="#7fba00"/>
+      <rect y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/>
+    </svg>
+    Iniciar sesión con Microsoft
+  </button>
+  <div id="login-err">Error al iniciar sesión. Intenta de nuevo.</div>
+</div>
 
-async function getGraphToken() {
-  const req = { scopes: ['https://graph.microsoft.com/Files.Read.All'], account: msalApp.getAllAccounts()[0] };
-  try {
-    const r = await msalApp.acquireTokenSilent(req);
-    return r.accessToken;
-  } catch(e) {
-    await msalApp.acquireTokenRedirect(req);
-    return null;
-  }
-}
+<!-- ══ DASHBOARD ══ -->
+<div id="dashboard-section" style="display:none">
+<div id="load-status"></div>
 
-async function loadExcelData() {
-  const status = document.getElementById('load-status');
-  try {
-    status.textContent = 'Conectando con SharePoint...';
-    const token = await getGraphToken();
-    if (!token) return;
+<header class="hdr">
+  <div class="hlogo">MP</div>
+  <div>
+    <h1>Materias Primas — Análisis de Compras</h1>
+    <div class="hdr-sub">Solo COMPLETO · Fecha Entrega Real · IMPORTE DE MAT. ENTREGADO · 2022–2026</div>
+  </div>
+  <div class="hdr-r">
+    <div class="uchip" id="user-chip" style="display:none">
+      <div class="uavatar" id="uavatar"></div>
+      <span class="uname" id="uname"></span>
+    </div>
+    <button class="btn-hdr" onclick="logout()" title="Cerrar sesión">⎋ Salir</button>
+    <div class="fbadge" id="fbadge">🔍 <span id="fbadge-n">0</span> filtro(s)</div>
+    <div class="sw" onclick="toggleTheme()">
+      <div class="sw-t" id="sw-t"><div class="sw-th"></div></div>
+      <span class="sw-lbl" id="sw-l">☀️ Claro</span>
+    </div>
+    <button class="btn-hdr" id="freeze-btn" onclick="toggleFreeze()">📌 Fijar filtros</button>
+    <button class="btn-hdr" onclick="exportCSV()">⬇ CSV</button>
+  </div>
+</header>
 
-    let totalRegistros = 0;
+<!-- SHEET TABS -->
+<div class="sheet-tabs" id="sheet-tabs">
+  <button class="sheet-tab active" id="stab-MP" onclick="switchSheet('MP')"><span class="sheet-tab-ico">🧪</span>Materias Primas<span class="sheet-tab-count">1,189</span></button>
+  <button class="sheet-tab" id="stab-PIGMENTOS" onclick="switchSheet('PIGMENTOS')"><span class="sheet-tab-ico">🎨</span>Pigmentos<span class="sheet-tab-count">122</span></button>
+  <button class="sheet-tab" id="stab-FRAGANCIAS" onclick="switchSheet('FRAGANCIAS')"><span class="sheet-tab-ico">🌸</span>Fragancias<span class="sheet-tab-count">7,443</span></button>
+  <button class="sheet-tab" id="stab-PIPAS" onclick="switchSheet('PIPAS')"><span class="sheet-tab-ico">🛢️</span>Pipas<span class="sheet-tab-count">3,723</span></button>
+  <button class="sheet-tab" id="stab-OTROS" onclick="switchSheet('OTROS')"><span class="sheet-tab-ico">📦</span>Otros<span class="sheet-tab-count">119</span></button>
+</div>
+<!-- FILTER BAR -->
+<div class="fbar" id="fbar">
+  <div class="fg"><div class="fg-l">📅 Año</div><div class="msr" id="msr-yr"><div class="mst" id="mst-yr" onclick="toggleDD('yr')"><span class="mst-tx" id="mtx-yr">Todos</span><span class="mst-ct" id="mct-yr"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-yr"></div></div></div>
+  <div class="fg"><div class="fg-l">📆 Mes</div><div class="msr" id="msr-mo"><div class="mst" id="mst-mo" onclick="toggleDD('mo')"><span class="mst-tx" id="mtx-mo">Todos</span><span class="mst-ct" id="mct-mo"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-mo"></div></div></div>
+  <div class="fg"><div class="fg-l">🏭 Proveedor</div><div class="msr" id="msr-pv"><div class="mst" id="mst-pv" onclick="toggleDD('pv')"><span class="mst-tx" id="mtx-pv">Todos</span><span class="mst-ct" id="mct-pv"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-pv"></div></div></div>
+  <div class="fg"><div class="fg-l">📦 Materia</div><div class="msr" id="msr-pr"><div class="mst" id="mst-pr" onclick="toggleDD('pr')"><span class="mst-tx" id="mtx-pr">Todas</span><span class="mst-ct" id="mct-pr"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-pr"></div></div></div>
+  <div class="fg">
+    <div class="fg-l">💱 Moneda</div>
+    <div class="cur-seg">
+      <button class="cur-b active" id="cbtn-MXN" onclick="setCur('MXN')">MXN</button>
+      <button class="cur-b"        id="cbtn-USD" onclick="setCur('USD')">USD</button>
+      <button class="cur-b"        id="cbtn-ALL" onclick="setCur('ALL')">Ambas</button>
+    </div>
+  </div>
+  <div class="fg">
+    <div class="fg-l">🧭 Ir a sección</div>
+    <div class="qnav-wrap" id="qnav-wrap">
+      <div class="qnav-trigger" id="qnav-trigger" onclick="toggleQNav()">
+        <span>📍 Navegar</span>
+        <span class="qnav-trigger-arr" id="qnav-arr">▼</span>
+      </div>
+      <nav class="qnav" id="qnav">
+        <div class="qnav-sec">Vista rápida</div>
+        <button class="qnav-item" onclick="navTo('wrap-kpi')"><span class="qnav-ico">📊</span><span class="qnav-lbl">Resumen general</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s1')"><span class="qnav-ico">🏆</span><span class="qnav-lbl">1. Ranking de Materias</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s2')"><span class="qnav-ico">📐</span><span class="qnav-lbl">2. Máximo y Mínimo</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s3')"><span class="qnav-ico">🏭</span><span class="qnav-lbl">3. Participación Proveedores</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s4')"><span class="qnav-ico">📈</span><span class="qnav-lbl">4. Evolución Proveedores</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s5')"><span class="qnav-ico">📦</span><span class="qnav-lbl">5. Evolución Materias</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s5b')"><span class="qnav-ico">💲</span><span class="qnav-lbl">5b. Precios por Material</span><span class="qnav-badge">nuevo</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s6')"><span class="qnav-ico">🧾</span><span class="qnav-lbl">6. Órdenes de Compra</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s7')"><span class="qnav-ico">📊</span><span class="qnav-lbl">7. Variación OC vs Entrega</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s8')"><span class="qnav-ico">⏱️</span><span class="qnav-lbl">8. Tiempos de Entrega</span></button>
+        <button class="qnav-item" onclick="navTo('wrap-s9')"><span class="qnav-ico">💰</span><span class="qnav-lbl">9. Análisis Económico</span></button>
+      </nav>
+    </div>
+  </div>
+  <div class="fg"><button class="btn-sm" onclick="resetAll()" style="margin-top:16px">↺ Limpiar</button></div>
+</div>
+<div class="chips" id="chips"></div>
 
-    for (const sheet of SHEET_NAMES) {
-      status.textContent = 'Leyendo hoja ' + sheet + '...';
-      const sheetRes = await fetch(
-        'https://graph.microsoft.com/v1.0/sites/' + SITE_ID + '/drives/' + DRIVE_ID + '/items/' + FILE_ID + '/workbook/worksheets/' + sheet + '/usedRange',
-        { headers: { Authorization: 'Bearer ' + token } }
-      );
-      const sheetData = await sheetRes.json();
+<div class="page">
+<!-- §0 KPIs -->
+<div class="sec-wrap" id="wrap-kpi" style="position:sticky;top:155px;z-index:175;background:var(--bg);padding-bottom:6px;box-shadow:0 3px 12px rgba(0,0,0,.15)">
+  <div class="sec-hdr" onclick="toggleSec('kpi')"><span class="sec-ttl">📊 Resumen General</span><span class="sec-tog open" id="tog-kpi">▼</span></div>
+  <div class="sec-body" id="body-kpi"><div class="kpis" id="kpis" style="padding-top:10px"></div></div>
+</div>
 
-      if (!sheetData.values) {
-        console.error('Error leyendo hoja', sheet, sheetData.error);
-        RAW_BY_SHEET[sheet] = [];
-        continue;
-      }
+<!-- §1 RANKING -->
+<div class="sec-wrap" id="wrap-s1">
+  <div class="sec-hdr" onclick="toggleSec('s1')"><span class="sec-ttl">🏆 1. Ranking de Materias Adquiridas</span><span class="sec-tog open" id="tog-s1">▼</span></div>
+  <div class="sec-body" id="body-s1">
+    <div class="g2" style="align-items:start;padding-top:10px">
+      <div class="card">
+        <div class="ch">
+          <div><div class="ct">Todas las materias — KG y Toneladas separados</div><div class="cs">Clic en columna para ordenar ▲▼ · IMPORTE DE MAT. ENTREGADO</div></div>
+          <div class="ca">
+            <select class="btn-sm" id="rsort-key" onchange="onSortChange()" style="min-width:110px">
+              <option value="qty_total">Volumen</option>
+              <option value="kg">KG</option>
+              <option value="ton">Toneladas</option>
+              <option value="lt">LTS</option>
+              <option value="importe">Importe</option>
+              <option value="avg_q">Prom/Mes Vol.</option>
+              <option value="avg_n">Prom/Mes $</option>
+            </select>
+            <button class="btn-sm on" id="rsort-dir" onclick="toggleSortDir()">↓ Mayor→Menor</button>
+            <button class="btn-hdr" onclick="expTbl('tbl-rank')">⬇ CSV</button>
+          </div>
+        </div>
+        <div class="tw" style="max-height:500px"><table id="tbl-rank"></table></div>
+      </div>
+      <div class="card">
+        <div class="ch">
+          <div><div class="ct">Top 12 — Volumen KG y LTS</div><div class="cs">Barras agrupadas · orden activo</div></div>
+          <div class="ca"><button class="btn-sm on" id="rcht" onclick="cycleRankChartType()">Horizontal</button></div>
+        </div>
+        <div style="height:480px;position:relative"><canvas id="ch-rvol"></canvas></div>
+      </div>
+    </div>
+    <div class="gf card">
+      <div class="ch">
+        <div><div class="ct">Importe por materia — Top 12</div><div class="cs"><span class="price-tag-mxn">■ MXN original</span> &nbsp; <span class="price-tag-usd">■ USD original</span> &nbsp; (sin conversión · cada moneda en su valor)</div></div>
+        <div class="ca">
+          <button class="btn-sm on" id="rimp-t" onclick="cycleRankImpType()">Apilado</button>
+          <button class="btn-sm on" id="rimp-a" onclick="cycleRankImpAxis()">Horizontal</button>
+        </div>
+      </div>
+      <div style="height:320px;position:relative"><canvas id="ch-rimp"></canvas></div>
+    </div>
+  </div>
+</div>
 
-      RAW_BY_SHEET[sheet] = parseExcelData(sheetData.values);
-      totalRegistros += RAW_BY_SHEET[sheet].length;
-    }
+<!-- §2 MAX/MIN -->
+<div class="sec-wrap" id="wrap-s2">
+  <div class="sec-hdr" onclick="toggleSec('s2')"><span class="sec-ttl">📐 2. Consumo Máximo y Mínimo por Materia</span><span class="sec-tog open" id="tog-s2">▼</span></div>
+  <div class="sec-body" id="body-s2">
+    <div class="gf card" style="padding-top:10px">
+      <div class="ch"><div><div class="ct">Extremos mensuales</div><div class="cs">Mayor y menor consumo · periodo · proveedor</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-mm')">⬇ CSV</button></div></div>
+      <div class="tw" style="max-height:340px"><table id="tbl-mm"></table></div>
+    </div>
+  </div>
+</div>
 
-    status.textContent = totalRegistros + ' registros cargados desde SharePoint';
-    setTimeout(function() { status.textContent = ''; }, 3000);
-    initDashboard();
+<!-- §3 PROVEEDORES -->
+<div class="sec-wrap" id="wrap-s3">
+  <div class="sec-hdr" onclick="toggleSec('s3')"><span class="sec-ttl">🏭 3. Participación por Proveedor</span><span class="sec-tog open" id="tog-s3">▼</span></div>
+  <div class="sec-body" id="body-s3" style="padding-top:10px">
+    <div class="g2">
+      <div class="card" style="grid-column:span 2">
+        <div class="ch"><div><div class="ct">KG / LTS por proveedor — Top 15</div></div><div class="ca"><button class="btn-sm on" id="pvt" onclick="cyclePvType()">Barras</button></div></div>
+        <div style="height:310px;position:relative"><canvas id="ch-pvbar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div><div class="ct">Donut — Participación %</div></div></div>
+        <div style="height:270px;position:relative"><canvas id="ch-pvdnt"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div><div class="ct">Treemap</div></div></div>
+        <div class="tm-wrap" id="treemap"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-  } catch(err) {
-    status.textContent = 'Error: ' + err.message;
-    console.error(err);
-  }
-}
+<!-- §4 EVOL PROVEEDOR -->
+<div class="sec-wrap" id="wrap-s4">
+  <div class="sec-hdr" onclick="toggleSec('s4')"><span class="sec-ttl">📈 4. Evolución de Compras por Proveedor</span><span class="sec-tog open" id="tog-s4">▼</span></div>
+  <div class="sec-body" id="body-s4" style="padding-top:10px">
+    <div class="gf card">
+      <div class="ch"><div><div class="ct">KG / LTS anuales — top 8 proveedores</div></div><div class="ca"><button class="btn-sm on" id="evt" onclick="cycleEvType()">Línea</button></div></div>
+      <div style="height:290px;position:relative"><canvas id="ch-evpv"></canvas></div>
+    </div>
+    <div class="gf card">
+      <div class="ch"><div><div class="ct">Variación anual por proveedor</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-pvyr')">⬇ CSV</button></div></div>
+      <div class="tw" style="max-height:250px"><table id="tbl-pvyr"></table></div>
+    </div>
+  </div>
+</div>
 
-function toDateStr(val) {
-  if (!val) return '';
-  if (typeof val === 'number') {
-    var d = new Date(Math.round((val - 25569) * 86400 * 1000));
-    return d.toISOString().slice(0, 10);
-  }
-  return String(val).slice(0, 10);
-}
+<!-- §5 EVOL MATERIA -->
+<div class="sec-wrap" id="wrap-s5">
+  <div class="sec-hdr" onclick="toggleSec('s5')"><span class="sec-ttl">📦 5. Evolución Histórica por Materia</span><span class="sec-tog open" id="tog-s5">▼</span></div>
+  <div class="sec-body" id="body-s5" style="padding-top:10px">
+    <div class="gf card">
+      <div class="ch"><div><div class="ct">Top 10 materias — volumen por año</div></div></div>
+      <div style="height:290px;position:relative"><canvas id="ch-evpr"></canvas></div>
+    </div>
+    <div class="gf card">
+      <div class="ch"><div><div class="ct">Variación anual por materia</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-pryr')">⬇ CSV</button></div></div>
+      <div class="tw" style="max-height:250px"><table id="tbl-pryr"></table></div>
+    </div>
+  </div>
+</div>
 
-// ============================================================
-// PARSER: traduce filas del Excel a objetos JS
-// Estructura comun a las 5 hojas: headers en fila indice 3,
-// datos desde fila indice 4. PIPAS no tiene PRESENTACION.
-// Si cambian columnas del Excel, ajustar este parser
-// ============================================================
-function parseExcelData(values) {
-  var headers = values[3].map(function(h) { return String(h).trim(); });
-  var colIdx = {};
-  headers.forEach(function(h, i) { colIdx[h] = i; });
+<!-- §5b PRECIOS -->
+<div class="sec-wrap" id="wrap-s5b">
+  <div class="sec-hdr" onclick="toggleSec('s5b')"><span class="sec-ttl">💲 5b. Comportamiento de Precios por Material</span><span class="sec-tog open" id="tog-s5b">▼</span></div>
+  <div class="sec-body" id="body-s5b" style="padding-top:10px">
+    <div class="gf card">
+      <div class="ch">
+        <div><div class="ct">Evolución mensual de PRECIO UNITARIO — Top materias</div><div class="cs">PRECIO UNITARIO <strong style="color:var(--acc2)">sin IVA</strong> · en moneda original · MXN <span class="price-tag-mxn">■</span> · USD <span class="price-tag-usd">■</span></div></div>
+        <div class="ca">
+          <div class="msr" id="msr-pm"><div class="mst" id="mst-pm" onclick="toggleDD('pm')" style="min-width:140px"><span class="mst-tx" id="mtx-pm">Top 5 materias</span><span class="mst-ct" id="mct-pm"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-pm"></div></div>
+        </div>
+      </div>
+      <div style="height:300px;position:relative"><canvas id="ch-price"></canvas></div>
+    </div>
+    <!-- Stats table -->
+    <div class="gf card">
+      <div class="ch"><div><div class="ct">Estadísticas de precio por material</div><div class="cs">PRECIO UNITARIO sin IVA · Mín · Máx · Prom ponderado · Variación %</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-price')">⬇ CSV</button></div></div>
+      <div class="tw" style="max-height:320px"><table id="tbl-price"></table></div>
+    </div>
+    <!-- Annual variation -->
+    <div class="gf card">
+      <div class="ch"><div><div class="ct">Precio promedio anual por material — variación %</div><div class="cs">Precio unitario promedio ponderado por cantidad entregada</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-price-yr')">⬇ CSV</button></div></div>
+      <div class="tw" style="max-height:280px"><table id="tbl-price-yr"></table></div>
+    </div>
+  </div>
+</div>
 
-  function col(name) { return colIdx[name] !== undefined ? colIdx[name] : -1; }
-  function val(row, name) { var i = col(name); return i >= 0 ? row[i] : ''; }
+<!-- §6 ÓRDENES -->
+<div class="sec-wrap" id="wrap-s6">
+  <div class="sec-hdr" onclick="toggleSec('s6')"><span class="sec-ttl">🧾 6. Órdenes de Compra</span><span class="sec-tog open" id="tog-s6">▼</span></div>
+  <div class="sec-body" id="body-s6" style="padding-top:10px">
+    <div class="kpis" id="kpis-fo"></div>
+    <div class="gf card">
+      <div class="ch"><div><div class="ct">Suma de importe e importe promedio por periodo</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-fo')">⬇ CSV</button></div></div>
+      <div style="height:230px;position:relative"><canvas id="ch-fo"></canvas></div>
+      <div class="tw" style="max-height:200px;margin-top:10px"><table id="tbl-fo"></table></div>
+    </div>
+  </div>
+</div>
 
-  var records = [];
-  for (var i = 4; i < values.length; i++) {
-    var row = values[i];
-    var folio = String(val(row, 'FOLIO OC') || '').trim();
-    if (!folio) continue;
+<!-- §7 VARIACIÓN -->
+<div class="sec-wrap" id="wrap-s7">
+  <div class="sec-hdr" onclick="toggleSec('s7')"><span class="sec-ttl">📊 7. Variación OC vs Entrega (Cumplimiento)</span><span class="sec-tog open" id="tog-s7">▼</span></div>
+  <div class="sec-body" id="body-s7" style="padding-top:10px">
+    <div class="kpis" id="kpis-var"></div>
+    <div class="g2">
+      <div class="card"><div class="ch"><div><div class="ct">Cumplimiento % por proveedor</div></div></div><div style="height:300px;position:relative"><canvas id="ch-vcumpl"></canvas></div></div>
+      <div class="card"><div class="ch"><div><div class="ct">Distribución de entregas</div></div></div><div style="height:300px;position:relative"><canvas id="ch-vpie"></canvas></div></div>
+    </div>
+    <div class="gf card">
+      <div class="ch">
+        <div><div class="ct">Resumen por proveedor</div><div class="cs">OC · Entregado · Cumplimiento · Importe</div></div>
+        <div class="ca">
+          <button class="det-btn" id="det-btn" onclick="toggleDet()">▶ Ver detalle de OC</button>
+          <button class="btn-hdr" onclick="expTbl('tbl-vsum')">⬇ CSV</button>
+        </div>
+      </div>
+      <div class="tw" style="max-height:300px"><table id="tbl-vsum"></table></div>
+      <div class="det-pane" id="det-pane">
+        <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between"><span>Detalle por Orden de Compra</span><button class="btn-hdr" onclick="expTbl('tbl-vdet')">⬇ CSV</button></div>
+        <div class="tw" style="max-height:380px"><table id="tbl-vdet"></table></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    var moneda = String(val(row, 'MONEDA') || 'MXN').trim();
-    var totalNeto = parseFloat(val(row, 'TOTAL NETO')) || 0;
-    var tc = parseFloat(val(row, 'TIPO DE CAMBIO (SOLICITUD)')) || (moneda === 'USD' ? 18.5 : 1);
-    var totalMxn = moneda === 'USD' ? totalNeto * tc : totalNeto;
-    var diasAtraso = parseFloat(val(row, 'DIAS DE ATRASO')) || parseFloat(val(row, 'D\u00cdAS DE ATRASO')) || 0;
-    var cantPendiente = parseFloat(val(row, 'CANTIDAD PENDIENTE')) || 0;
-    var puntoEntrega = String(val(row, 'PUNTO DE ENTREGA') || '').trim();
+<!-- §8 TIEMPOS -->
+<div class="sec-wrap" id="wrap-s8">
+  <div class="sec-hdr" onclick="toggleSec('s8')"><span class="sec-ttl">⏱️ 8. Variación de Tiempo de Entrega</span><span class="sec-tog open" id="tog-s8">▼</span></div>
+  <div class="sec-body" id="body-s8" style="padding-top:10px">
+    <div class="kpis" id="kpis-tm"></div>
+    <div class="g2">
+      <div class="card"><div class="ch"><div><div class="ct">Histograma — días de entrega</div></div></div><div style="height:260px;position:relative"><canvas id="ch-hist"></canvas></div></div>
+      <div class="card"><div class="ch"><div><div class="ct">Días prom. por proveedor</div></div></div><div style="height:260px;position:relative"><canvas id="ch-tpv"></canvas></div></div>
+    </div>
+    <div class="gf card"><div class="ch"><div><div class="ct">Evolución mensual de días de entrega</div></div></div><div style="height:230px;position:relative"><canvas id="ch-ttrend"></canvas></div></div>
+  </div>
+</div>
 
-    if (puntoEntrega === 'Cancelada') continue;
-    if (diasAtraso < -100) continue;
+<!-- §9 ECONÓMICO -->
+<div class="sec-wrap" id="wrap-s9">
+  <div class="sec-hdr" onclick="toggleSec('s9')"><span class="sec-ttl">💰 9. Análisis Económico</span><span class="sec-tog open" id="tog-s9">▼</span></div>
+  <div class="sec-body" id="body-s9" style="padding-top:10px">
+    <div class="kpis" id="kpis-eco"></div>
+    <div id="tc-info" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r8);padding:9px 13px;margin-bottom:12px;font-size:11px;color:var(--text2);line-height:1.7"></div>
+    <div class="g2">
+      <div class="card"><div class="ch"><div><div class="ct">Importe MXN vs USD por materia</div><div class="cs">Sin conversión · cada moneda en su valor original</div></div></div><div style="height:300px;position:relative"><canvas id="ch-ecbar"></canvas></div></div>
+      <div class="card"><div class="ch"><div><div class="ct">Evolución mensual de importes</div></div></div><div style="height:300px;position:relative"><canvas id="ch-ectrend"></canvas></div></div>
+    </div>
+    <div class="gf card">
+      <div class="ch"><div><div class="ct">Tabla económica por materia</div><div class="cs">MXN original · USD original · sin conversión · ambos registros visibles si aplica</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-eco')">⬇ CSV</button></div></div>
+      <div class="tw" style="max-height:320px"><table id="tbl-eco"></table></div>
+    </div>
+  </div>
+</div>
+</div><!-- /page -->
 
-    records.push({
-      no_requi: String(val(row, 'NO. REQUI') || '').trim(),
-      folio: folio,
-      fecha: toDateStr(val(row, 'FECHA OC')),
-      mes: toDateStr(val(row, 'FECHA OC')).slice(0, 7),
-      proveedor: String(val(row, 'PROVEEDOR') || '').trim(),
-      producto: String(val(row, 'PRODUCTO') || '').trim(),
-      cantidad: parseFloat(val(row, 'CANTIDAD')) || 0,
-      um: String(val(row, 'UM') || '').trim(),
-      precio_unit: parseFloat(val(row, 'PRECIO UNITARIO')) || 0,
-      iva: parseFloat(val(row, 'IVA')) || 0,
-      unitario_neto: parseFloat(val(row, 'UNITARIO NETO')) || 0,
-      total_neto: totalNeto,
-      moneda: moneda,
-      tc: tc,
-      total_mxn: totalMxn,
-      importe_entregado: parseFloat(val(row, 'IMPORTE DE MAT. ENTREGADO')) || 0,
-      presentacion: String(val(row, 'PRESENTACI\u00d3N') || '').trim(),
-      fecha_sol_entrega: toDateStr(val(row, 'FECHA SOLICITADA DE ENTREGA')) || toDateStr(val(row, 'FECHA SOL. DE ENTREGA')),
-      fecha_entrega_real: toDateStr(val(row, 'FECHA ENTREGA REAL')),
-      dias_atraso: diasAtraso,
-      cant_entregada: parseFloat(val(row, 'CANTIDAD ENTREGADA')) || 0,
-      cant_pendiente: cantPendiente,
-      punto_entrega: puntoEntrega,
-      razon_social: String(val(row, 'RAZ\u00d3N SOCIAL') || '').trim(),
-      folio_factura: String(val(row, 'FOLIO FACTURA O REMISI\u00d3N') || '').trim(),
-      estatus: String(val(row, 'ESTATUS') || '').trim(),
-      condicion: String(val(row, 'CONDICI\u00d3N DE PAGO') || '').trim()
-    });
-  }
-  return records;
-}
+</div><!-- /dashboard-section -->
+
+<script src="connector.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
