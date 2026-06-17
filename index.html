@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://alcdn.msauth.net https://cdnjs.cloudflare.com; connect-src https://login.microsoftonline.com https://graph.microsoft.com; frame-src https://login.microsoftonline.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://login.microsoftonline.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://alcdn.msauth.net https://cdnjs.cloudflare.com; connect-src https://login.microsoftonline.com https://graph.microsoft.com; frame-src https://login.microsoftonline.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://login.microsoftonline.com;">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Dashboard Compras — Grupo Ginez</title>
-<script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"
+        integrity="sha384-PARf28kmic36Ve+O3DnUerRXFtOQ7ZDqRDGpLcbljly5/N39T2OV3kt3QsWOKeAX"
+        crossorigin="anonymous"></script>
 <script
   src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
   integrity="sha384-bs/nf9FbdNouRbMiFcrcZfLXYPKiPaGVGplVbv7dLGECccEXDW+S3zjqSKR5ZEaD"
@@ -208,7 +210,7 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
   <div class="login-logo">📦</div>
   <div class="login-title">Dashboard de Compras</div>
   <div class="login-sub">Grupo Ginez &middot; Accede con tu cuenta Microsoft 365 para consultar la información actualizada desde SharePoint.</div>
-  <button class="login-btn" onclick="login()">
+  <button class="login-btn" id="login-btn">
     <svg width="18" height="18" viewBox="0 0 21 21" fill="none">
       <rect width="10" height="10" fill="#f25022"/><rect x="11" width="10" height="10" fill="#7fba00"/>
       <rect y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/>
@@ -233,83 +235,83 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
       <div class="uavatar" id="uavatar"></div>
       <span class="uname" id="uname"></span>
     </div>
-    <button class="btn-hdr" onclick="logout()" title="Cerrar sesión">⎋ Salir</button>
+    <button class="btn-hdr" id="logout-btn" title="Cerrar sesión">⎋ Salir</button>
     <div class="fbadge" id="fbadge">🔍 <span id="fbadge-n">0</span> filtro(s)</div>
-    <div class="sw" onclick="toggleTheme()">
+    <div class="sw" id="theme-sw">
       <div class="sw-t" id="sw-t"><div class="sw-th"></div></div>
       <span class="sw-lbl" id="sw-l">☀️ Claro</span>
     </div>
-    <button class="btn-hdr" id="freeze-btn" onclick="toggleFreeze()">📌 Fijar filtros</button>
-    <button class="btn-hdr" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn-hdr" id="freeze-btn">📌 Fijar filtros</button>
+    <button class="btn-hdr" id="export-csv-btn">⬇ CSV</button>
   </div>
 </header>
 
 <!-- SHEET TABS -->
 <div class="sheet-tabs" id="sheet-tabs">
-  <button class="sheet-tab active" id="stab-MP" onclick="switchSheet('MP')"><span class="sheet-tab-ico">🧪</span>Materias Primas<span class="sheet-tab-count">1,189</span></button>
-  <button class="sheet-tab" id="stab-PIGMENTOS" onclick="switchSheet('PIGMENTOS')"><span class="sheet-tab-ico">🎨</span>Pigmentos<span class="sheet-tab-count">122</span></button>
-  <button class="sheet-tab" id="stab-FRAGANCIAS" onclick="switchSheet('FRAGANCIAS')"><span class="sheet-tab-ico">🌸</span>Fragancias<span class="sheet-tab-count">7,443</span></button>
-  <button class="sheet-tab" id="stab-PIPAS" onclick="switchSheet('PIPAS')"><span class="sheet-tab-ico">🛢️</span>Pipas<span class="sheet-tab-count">3,723</span></button>
-  <button class="sheet-tab" id="stab-OTROS" onclick="switchSheet('OTROS')"><span class="sheet-tab-ico">📦</span>Otros<span class="sheet-tab-count">119</span></button>
+  <button class="sheet-tab active" id="stab-MP" data-sheet="MP"><span class="sheet-tab-ico">🧪</span>Materias Primas<span class="sheet-tab-count">1,189</span></button>
+  <button class="sheet-tab" id="stab-PIGMENTOS" data-sheet="PIGMENTOS"><span class="sheet-tab-ico">🎨</span>Pigmentos<span class="sheet-tab-count">122</span></button>
+  <button class="sheet-tab" id="stab-FRAGANCIAS" data-sheet="FRAGANCIAS"><span class="sheet-tab-ico">🌸</span>Fragancias<span class="sheet-tab-count">7,443</span></button>
+  <button class="sheet-tab" id="stab-PIPAS" data-sheet="PIPAS"><span class="sheet-tab-ico">🛢️</span>Pipas<span class="sheet-tab-count">3,723</span></button>
+  <button class="sheet-tab" id="stab-OTROS" data-sheet="OTROS"><span class="sheet-tab-ico">📦</span>Otros<span class="sheet-tab-count">119</span></button>
 </div>
 <!-- FILTER BAR -->
 <div class="fbar" id="fbar">
-  <div class="fg"><div class="fg-l">📅 Año</div><div class="msr" id="msr-yr"><div class="mst" id="mst-yr" onclick="toggleDD('yr')"><span class="mst-tx" id="mtx-yr">Todos</span><span class="mst-ct" id="mct-yr"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-yr"></div></div></div>
-  <div class="fg"><div class="fg-l">📆 Mes</div><div class="msr" id="msr-mo"><div class="mst" id="mst-mo" onclick="toggleDD('mo')"><span class="mst-tx" id="mtx-mo">Todos</span><span class="mst-ct" id="mct-mo"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-mo"></div></div></div>
-  <div class="fg"><div class="fg-l">🏭 Proveedor</div><div class="msr" id="msr-pv"><div class="mst" id="mst-pv" onclick="toggleDD('pv')"><span class="mst-tx" id="mtx-pv">Todos</span><span class="mst-ct" id="mct-pv"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-pv"></div></div></div>
-  <div class="fg"><div class="fg-l">📦 Materia</div><div class="msr" id="msr-pr"><div class="mst" id="mst-pr" onclick="toggleDD('pr')"><span class="mst-tx" id="mtx-pr">Todas</span><span class="mst-ct" id="mct-pr"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-pr"></div></div></div>
+  <div class="fg"><div class="fg-l">📅 Año</div><div class="msr" id="msr-yr"><div class="mst" id="mst-yr" data-dd="yr"><span class="mst-tx" id="mtx-yr">Todos</span><span class="mst-ct" id="mct-yr"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-yr"></div></div></div>
+  <div class="fg"><div class="fg-l">📆 Mes</div><div class="msr" id="msr-mo"><div class="mst" id="mst-mo" data-dd="mo"><span class="mst-tx" id="mtx-mo">Todos</span><span class="mst-ct" id="mct-mo"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-mo"></div></div></div>
+  <div class="fg"><div class="fg-l">🏭 Proveedor</div><div class="msr" id="msr-pv"><div class="mst" id="mst-pv" data-dd="pv"><span class="mst-tx" id="mtx-pv">Todos</span><span class="mst-ct" id="mct-pv"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-pv"></div></div></div>
+  <div class="fg"><div class="fg-l">📦 Materia</div><div class="msr" id="msr-pr"><div class="mst" id="mst-pr" data-dd="pr"><span class="mst-tx" id="mtx-pr">Todas</span><span class="mst-ct" id="mct-pr"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-pr"></div></div></div>
   <div class="fg">
     <div class="fg-l">💱 Moneda</div>
     <div class="cur-seg">
-      <button class="cur-b active" id="cbtn-MXN" onclick="setCur('MXN')">MXN</button>
-      <button class="cur-b"        id="cbtn-USD" onclick="setCur('USD')">USD</button>
-      <button class="cur-b"        id="cbtn-ALL" onclick="setCur('ALL')">Ambas</button>
+      <button class="cur-b active" id="cbtn-MXN" data-cur="MXN">MXN</button>
+      <button class="cur-b"        id="cbtn-USD" data-cur="USD">USD</button>
+      <button class="cur-b"        id="cbtn-ALL" data-cur="ALL">Ambas</button>
     </div>
   </div>
   <div class="fg">
     <div class="fg-l">🧭 Ir a sección</div>
     <div class="qnav-wrap" id="qnav-wrap">
-      <div class="qnav-trigger" id="qnav-trigger" onclick="toggleQNav()">
+      <div class="qnav-trigger" id="qnav-trigger">
         <span>📍 Navegar</span>
         <span class="qnav-trigger-arr" id="qnav-arr">▼</span>
       </div>
       <nav class="qnav" id="qnav">
         <div class="qnav-sec">Vista rápida</div>
-        <button class="qnav-item" onclick="navTo('wrap-kpi')"><span class="qnav-ico">📊</span><span class="qnav-lbl">Resumen general</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s1')"><span class="qnav-ico">🏆</span><span class="qnav-lbl">1. Ranking de Materias</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s2')"><span class="qnav-ico">📐</span><span class="qnav-lbl">2. Máximo y Mínimo</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s3')"><span class="qnav-ico">🏭</span><span class="qnav-lbl">3. Participación Proveedores</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s4')"><span class="qnav-ico">📈</span><span class="qnav-lbl">4. Evolución Proveedores</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s5')"><span class="qnav-ico">📦</span><span class="qnav-lbl">5. Evolución Materias</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s5b')"><span class="qnav-ico">💲</span><span class="qnav-lbl">5b. Precios por Material</span><span class="qnav-badge">nuevo</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s6')"><span class="qnav-ico">🧾</span><span class="qnav-lbl">6. Órdenes de Compra</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s7')"><span class="qnav-ico">📊</span><span class="qnav-lbl">7. Variación OC vs Entrega</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s8')"><span class="qnav-ico">⏱️</span><span class="qnav-lbl">8. Tiempos de Entrega</span></button>
-        <button class="qnav-item" onclick="navTo('wrap-s9')"><span class="qnav-ico">💰</span><span class="qnav-lbl">9. Análisis Económico</span></button>
+        <button class="qnav-item" data-target="wrap-kpi"><span class="qnav-ico">📊</span><span class="qnav-lbl">Resumen general</span></button>
+        <button class="qnav-item" data-target="wrap-s1"><span class="qnav-ico">🏆</span><span class="qnav-lbl">1. Ranking de Materias</span></button>
+        <button class="qnav-item" data-target="wrap-s2"><span class="qnav-ico">📐</span><span class="qnav-lbl">2. Máximo y Mínimo</span></button>
+        <button class="qnav-item" data-target="wrap-s3"><span class="qnav-ico">🏭</span><span class="qnav-lbl">3. Participación Proveedores</span></button>
+        <button class="qnav-item" data-target="wrap-s4"><span class="qnav-ico">📈</span><span class="qnav-lbl">4. Evolución Proveedores</span></button>
+        <button class="qnav-item" data-target="wrap-s5"><span class="qnav-ico">📦</span><span class="qnav-lbl">5. Evolución Materias</span></button>
+        <button class="qnav-item" data-target="wrap-s5b"><span class="qnav-ico">💲</span><span class="qnav-lbl">5b. Precios por Material</span><span class="qnav-badge">nuevo</span></button>
+        <button class="qnav-item" data-target="wrap-s6"><span class="qnav-ico">🧾</span><span class="qnav-lbl">6. Órdenes de Compra</span></button>
+        <button class="qnav-item" data-target="wrap-s7"><span class="qnav-ico">📊</span><span class="qnav-lbl">7. Variación OC vs Entrega</span></button>
+        <button class="qnav-item" data-target="wrap-s8"><span class="qnav-ico">⏱️</span><span class="qnav-lbl">8. Tiempos de Entrega</span></button>
+        <button class="qnav-item" data-target="wrap-s9"><span class="qnav-ico">💰</span><span class="qnav-lbl">9. Análisis Económico</span></button>
       </nav>
     </div>
   </div>
-  <div class="fg"><button class="btn-sm" onclick="resetAll()" style="margin-top:16px">↺ Limpiar</button></div>
+  <div class="fg"><button class="btn-sm" id="reset-btn" style="margin-top:16px">↺ Limpiar</button></div>
 </div>
 <div class="chips" id="chips"></div>
 
 <div class="page">
 <!-- §0 KPIs -->
 <div class="sec-wrap" id="wrap-kpi" style="position:sticky;top:155px;z-index:175;background:var(--bg);padding-bottom:6px;box-shadow:0 3px 12px rgba(0,0,0,.15)">
-  <div class="sec-hdr" onclick="toggleSec('kpi')"><span class="sec-ttl">📊 Resumen General</span><span class="sec-tog open" id="tog-kpi">▼</span></div>
+  <div class="sec-hdr" data-sec="kpi"><span class="sec-ttl">📊 Resumen General</span><span class="sec-tog open" id="tog-kpi">▼</span></div>
   <div class="sec-body" id="body-kpi"><div class="kpis" id="kpis" style="padding-top:10px"></div></div>
 </div>
 
 <!-- §1 RANKING -->
 <div class="sec-wrap" id="wrap-s1">
-  <div class="sec-hdr" onclick="toggleSec('s1')"><span class="sec-ttl">🏆 1. Ranking de Materias Adquiridas</span><span class="sec-tog open" id="tog-s1">▼</span></div>
+  <div class="sec-hdr" data-sec="s1"><span class="sec-ttl">🏆 1. Ranking de Materias Adquiridas</span><span class="sec-tog open" id="tog-s1">▼</span></div>
   <div class="sec-body" id="body-s1">
     <div class="g2" style="align-items:start;padding-top:10px">
       <div class="card">
         <div class="ch">
           <div><div class="ct">Todas las materias — KG y Toneladas separados</div><div class="cs">Clic en columna para ordenar ▲▼ · IMPORTE DE MAT. ENTREGADO</div></div>
           <div class="ca">
-            <select class="btn-sm" id="rsort-key" onchange="onSortChange()" style="min-width:110px">
+            <select class="btn-sm" id="rsort-key" style="min-width:110px">
               <option value="qty_total">Volumen</option>
               <option value="kg">KG</option>
               <option value="ton">Toneladas</option>
@@ -318,8 +320,8 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
               <option value="avg_q">Prom/Mes Vol.</option>
               <option value="avg_n">Prom/Mes $</option>
             </select>
-            <button class="btn-sm on" id="rsort-dir" onclick="toggleSortDir()">↓ Mayor→Menor</button>
-            <button class="btn-hdr" onclick="expTbl('tbl-rank')">⬇ CSV</button>
+            <button class="btn-sm on" id="rsort-dir">↓ Mayor→Menor</button>
+            <button class="btn-hdr" data-tbl="tbl-rank">⬇ CSV</button>
           </div>
         </div>
         <div class="tw" style="max-height:500px"><table id="tbl-rank"></table></div>
@@ -327,7 +329,7 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
       <div class="card">
         <div class="ch">
           <div><div class="ct">Top 12 — Volumen KG y LTS</div><div class="cs">Barras agrupadas · orden activo</div></div>
-          <div class="ca"><button class="btn-sm on" id="rcht" onclick="cycleRankChartType()">Horizontal</button></div>
+          <div class="ca"><button class="btn-sm on" id="rcht">Horizontal</button></div>
         </div>
         <div style="height:480px;position:relative"><canvas id="ch-rvol"></canvas></div>
       </div>
@@ -336,8 +338,8 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
       <div class="ch">
         <div><div class="ct">Importe por materia — Top 12</div><div class="cs"><span class="price-tag-mxn">■ MXN original</span> &nbsp; <span class="price-tag-usd">■ USD original</span> &nbsp; (sin conversión · cada moneda en su valor)</div></div>
         <div class="ca">
-          <button class="btn-sm on" id="rimp-t" onclick="cycleRankImpType()">Apilado</button>
-          <button class="btn-sm on" id="rimp-a" onclick="cycleRankImpAxis()">Horizontal</button>
+          <button class="btn-sm on" id="rimp-t">Apilado</button>
+          <button class="btn-sm on" id="rimp-a">Horizontal</button>
         </div>
       </div>
       <div style="height:320px;position:relative"><canvas id="ch-rimp"></canvas></div>
@@ -347,10 +349,10 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 
 <!-- §2 MAX/MIN -->
 <div class="sec-wrap" id="wrap-s2">
-  <div class="sec-hdr" onclick="toggleSec('s2')"><span class="sec-ttl">📐 2. Consumo Máximo y Mínimo por Materia</span><span class="sec-tog open" id="tog-s2">▼</span></div>
+  <div class="sec-hdr" data-sec="s2"><span class="sec-ttl">📐 2. Consumo Máximo y Mínimo por Materia</span><span class="sec-tog open" id="tog-s2">▼</span></div>
   <div class="sec-body" id="body-s2">
     <div class="gf card" style="padding-top:10px">
-      <div class="ch"><div><div class="ct">Extremos mensuales</div><div class="cs">Mayor y menor consumo · periodo · proveedor</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-mm')">⬇ CSV</button></div></div>
+      <div class="ch"><div><div class="ct">Extremos mensuales</div><div class="cs">Mayor y menor consumo · periodo · proveedor</div></div><div class="ca"><button class="btn-hdr" data-tbl="tbl-mm">⬇ CSV</button></div></div>
       <div class="tw" style="max-height:340px"><table id="tbl-mm"></table></div>
     </div>
   </div>
@@ -358,11 +360,11 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 
 <!-- §3 PROVEEDORES -->
 <div class="sec-wrap" id="wrap-s3">
-  <div class="sec-hdr" onclick="toggleSec('s3')"><span class="sec-ttl">🏭 3. Participación por Proveedor</span><span class="sec-tog open" id="tog-s3">▼</span></div>
+  <div class="sec-hdr" data-sec="s3"><span class="sec-ttl">🏭 3. Participación por Proveedor</span><span class="sec-tog open" id="tog-s3">▼</span></div>
   <div class="sec-body" id="body-s3" style="padding-top:10px">
     <div class="g2">
       <div class="card" style="grid-column:span 2">
-        <div class="ch"><div><div class="ct">KG / LTS por proveedor — Top 15</div></div><div class="ca"><button class="btn-sm on" id="pvt" onclick="cyclePvType()">Barras</button></div></div>
+        <div class="ch"><div><div class="ct">KG / LTS por proveedor — Top 15</div></div><div class="ca"><button class="btn-sm on" id="pvt">Barras</button></div></div>
         <div style="height:310px;position:relative"><canvas id="ch-pvbar"></canvas></div>
       </div>
       <div class="card">
@@ -379,14 +381,14 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 
 <!-- §4 EVOL PROVEEDOR -->
 <div class="sec-wrap" id="wrap-s4">
-  <div class="sec-hdr" onclick="toggleSec('s4')"><span class="sec-ttl">📈 4. Evolución de Compras por Proveedor</span><span class="sec-tog open" id="tog-s4">▼</span></div>
+  <div class="sec-hdr" data-sec="s4"><span class="sec-ttl">📈 4. Evolución de Compras por Proveedor</span><span class="sec-tog open" id="tog-s4">▼</span></div>
   <div class="sec-body" id="body-s4" style="padding-top:10px">
     <div class="gf card">
-      <div class="ch"><div><div class="ct">KG / LTS anuales — top 8 proveedores</div></div><div class="ca"><button class="btn-sm on" id="evt" onclick="cycleEvType()">Línea</button></div></div>
+      <div class="ch"><div><div class="ct">KG / LTS anuales — top 8 proveedores</div></div><div class="ca"><button class="btn-sm on" id="evt">Línea</button></div></div>
       <div style="height:290px;position:relative"><canvas id="ch-evpv"></canvas></div>
     </div>
     <div class="gf card">
-      <div class="ch"><div><div class="ct">Variación anual por proveedor</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-pvyr')">⬇ CSV</button></div></div>
+      <div class="ch"><div><div class="ct">Variación anual por proveedor</div></div><div class="ca"><button class="btn-hdr" data-tbl="tbl-pvyr">⬇ CSV</button></div></div>
       <div class="tw" style="max-height:250px"><table id="tbl-pvyr"></table></div>
     </div>
   </div>
@@ -394,14 +396,14 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 
 <!-- §5 EVOL MATERIA -->
 <div class="sec-wrap" id="wrap-s5">
-  <div class="sec-hdr" onclick="toggleSec('s5')"><span class="sec-ttl">📦 5. Evolución Histórica por Materia</span><span class="sec-tog open" id="tog-s5">▼</span></div>
+  <div class="sec-hdr" data-sec="s5"><span class="sec-ttl">📦 5. Evolución Histórica por Materia</span><span class="sec-tog open" id="tog-s5">▼</span></div>
   <div class="sec-body" id="body-s5" style="padding-top:10px">
     <div class="gf card">
       <div class="ch"><div><div class="ct">Top 10 materias — volumen por año</div></div></div>
       <div style="height:290px;position:relative"><canvas id="ch-evpr"></canvas></div>
     </div>
     <div class="gf card">
-      <div class="ch"><div><div class="ct">Variación anual por materia</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-pryr')">⬇ CSV</button></div></div>
+      <div class="ch"><div><div class="ct">Variación anual por materia</div></div><div class="ca"><button class="btn-hdr" data-tbl="tbl-pryr">⬇ CSV</button></div></div>
       <div class="tw" style="max-height:250px"><table id="tbl-pryr"></table></div>
     </div>
   </div>
@@ -409,25 +411,25 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 
 <!-- §5b PRECIOS -->
 <div class="sec-wrap" id="wrap-s5b">
-  <div class="sec-hdr" onclick="toggleSec('s5b')"><span class="sec-ttl">💲 5b. Comportamiento de Precios por Material</span><span class="sec-tog open" id="tog-s5b">▼</span></div>
+  <div class="sec-hdr" data-sec="s5b"><span class="sec-ttl">💲 5b. Comportamiento de Precios por Material</span><span class="sec-tog open" id="tog-s5b">▼</span></div>
   <div class="sec-body" id="body-s5b" style="padding-top:10px">
     <div class="gf card">
       <div class="ch">
         <div><div class="ct">Evolución mensual de PRECIO UNITARIO — Top materias</div><div class="cs">PRECIO UNITARIO <strong style="color:var(--acc2)">sin IVA</strong> · en moneda original · MXN <span class="price-tag-mxn">■</span> · USD <span class="price-tag-usd">■</span></div></div>
         <div class="ca">
-          <div class="msr" id="msr-pm"><div class="mst" id="mst-pm" onclick="toggleDD('pm')" style="min-width:140px"><span class="mst-tx" id="mtx-pm">Top 5 materias</span><span class="mst-ct" id="mct-pm"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-pm"></div></div>
+          <div class="msr" id="msr-pm"><div class="mst" id="mst-pm" data-dd="pm" style="min-width:140px"><span class="mst-tx" id="mtx-pm">Top 5 materias</span><span class="mst-ct" id="mct-pm"></span><span class="mst-ar">▼</span></div><div class="msd" id="msd-pm"></div></div>
         </div>
       </div>
       <div style="height:300px;position:relative"><canvas id="ch-price"></canvas></div>
     </div>
     <!-- Stats table -->
     <div class="gf card">
-      <div class="ch"><div><div class="ct">Estadísticas de precio por material</div><div class="cs">PRECIO UNITARIO sin IVA · Mín · Máx · Prom ponderado · Variación %</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-price')">⬇ CSV</button></div></div>
+      <div class="ch"><div><div class="ct">Estadísticas de precio por material</div><div class="cs">PRECIO UNITARIO sin IVA · Mín · Máx · Prom ponderado · Variación %</div></div><div class="ca"><button class="btn-hdr" data-tbl="tbl-price">⬇ CSV</button></div></div>
       <div class="tw" style="max-height:320px"><table id="tbl-price"></table></div>
     </div>
     <!-- Annual variation -->
     <div class="gf card">
-      <div class="ch"><div><div class="ct">Precio promedio anual por material — variación %</div><div class="cs">Precio unitario promedio ponderado por cantidad entregada</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-price-yr')">⬇ CSV</button></div></div>
+      <div class="ch"><div><div class="ct">Precio promedio anual por material — variación %</div><div class="cs">Precio unitario promedio ponderado por cantidad entregada</div></div><div class="ca"><button class="btn-hdr" data-tbl="tbl-price-yr">⬇ CSV</button></div></div>
       <div class="tw" style="max-height:280px"><table id="tbl-price-yr"></table></div>
     </div>
   </div>
@@ -435,11 +437,11 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 
 <!-- §6 ÓRDENES -->
 <div class="sec-wrap" id="wrap-s6">
-  <div class="sec-hdr" onclick="toggleSec('s6')"><span class="sec-ttl">🧾 6. Órdenes de Compra</span><span class="sec-tog open" id="tog-s6">▼</span></div>
+  <div class="sec-hdr" data-sec="s6"><span class="sec-ttl">🧾 6. Órdenes de Compra</span><span class="sec-tog open" id="tog-s6">▼</span></div>
   <div class="sec-body" id="body-s6" style="padding-top:10px">
     <div class="kpis" id="kpis-fo"></div>
     <div class="gf card">
-      <div class="ch"><div><div class="ct">Suma de importe e importe promedio por periodo</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-fo')">⬇ CSV</button></div></div>
+      <div class="ch"><div><div class="ct">Suma de importe e importe promedio por periodo</div></div><div class="ca"><button class="btn-hdr" data-tbl="tbl-fo">⬇ CSV</button></div></div>
       <div style="height:230px;position:relative"><canvas id="ch-fo"></canvas></div>
       <div class="tw" style="max-height:200px;margin-top:10px"><table id="tbl-fo"></table></div>
     </div>
@@ -448,7 +450,7 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 
 <!-- §7 VARIACIÓN -->
 <div class="sec-wrap" id="wrap-s7">
-  <div class="sec-hdr" onclick="toggleSec('s7')"><span class="sec-ttl">📊 7. Variación OC vs Entrega (Cumplimiento)</span><span class="sec-tog open" id="tog-s7">▼</span></div>
+  <div class="sec-hdr" data-sec="s7"><span class="sec-ttl">📊 7. Variación OC vs Entrega (Cumplimiento)</span><span class="sec-tog open" id="tog-s7">▼</span></div>
   <div class="sec-body" id="body-s7" style="padding-top:10px">
     <div class="kpis" id="kpis-var"></div>
     <div class="g2">
@@ -459,13 +461,13 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
       <div class="ch">
         <div><div class="ct">Resumen por proveedor</div><div class="cs">OC · Entregado · Cumplimiento · Importe</div></div>
         <div class="ca">
-          <button class="det-btn" id="det-btn" onclick="toggleDet()">▶ Ver detalle de OC</button>
-          <button class="btn-hdr" onclick="expTbl('tbl-vsum')">⬇ CSV</button>
+          <button class="det-btn" id="det-btn">▶ Ver detalle de OC</button>
+          <button class="btn-hdr" data-tbl="tbl-vsum">⬇ CSV</button>
         </div>
       </div>
       <div class="tw" style="max-height:300px"><table id="tbl-vsum"></table></div>
       <div class="det-pane" id="det-pane">
-        <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between"><span>Detalle por Orden de Compra</span><button class="btn-hdr" onclick="expTbl('tbl-vdet')">⬇ CSV</button></div>
+        <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between"><span>Detalle por Orden de Compra</span><button class="btn-hdr" data-tbl="tbl-vdet">⬇ CSV</button></div>
         <div class="tw" style="max-height:380px"><table id="tbl-vdet"></table></div>
       </div>
     </div>
@@ -474,7 +476,7 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 
 <!-- §8 TIEMPOS -->
 <div class="sec-wrap" id="wrap-s8">
-  <div class="sec-hdr" onclick="toggleSec('s8')"><span class="sec-ttl">⏱️ 8. Variación de Tiempo de Entrega</span><span class="sec-tog open" id="tog-s8">▼</span></div>
+  <div class="sec-hdr" data-sec="s8"><span class="sec-ttl">⏱️ 8. Variación de Tiempo de Entrega</span><span class="sec-tog open" id="tog-s8">▼</span></div>
   <div class="sec-body" id="body-s8" style="padding-top:10px">
     <div class="kpis" id="kpis-tm"></div>
     <div class="g2">
@@ -487,7 +489,7 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 
 <!-- §9 ECONÓMICO -->
 <div class="sec-wrap" id="wrap-s9">
-  <div class="sec-hdr" onclick="toggleSec('s9')"><span class="sec-ttl">💰 9. Análisis Económico</span><span class="sec-tog open" id="tog-s9">▼</span></div>
+  <div class="sec-hdr" data-sec="s9"><span class="sec-ttl">💰 9. Análisis Económico</span><span class="sec-tog open" id="tog-s9">▼</span></div>
   <div class="sec-body" id="body-s9" style="padding-top:10px">
     <div class="kpis" id="kpis-eco"></div>
     <div id="tc-info" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r8);padding:9px 13px;margin-bottom:12px;font-size:11px;color:var(--text2);line-height:1.7"></div>
@@ -496,7 +498,7 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
       <div class="card"><div class="ch"><div><div class="ct">Evolución mensual de importes</div></div></div><div style="height:300px;position:relative"><canvas id="ch-ectrend"></canvas></div></div>
     </div>
     <div class="gf card">
-      <div class="ch"><div><div class="ct">Tabla económica por materia</div><div class="cs">MXN original · USD original · sin conversión · ambos registros visibles si aplica</div></div><div class="ca"><button class="btn-hdr" onclick="expTbl('tbl-eco')">⬇ CSV</button></div></div>
+      <div class="ch"><div><div class="ct">Tabla económica por materia</div><div class="cs">MXN original · USD original · sin conversión · ambos registros visibles si aplica</div></div><div class="ca"><button class="btn-hdr" data-tbl="tbl-eco">⬇ CSV</button></div></div>
       <div class="tw" style="max-height:320px"><table id="tbl-eco"></table></div>
     </div>
   </div>
