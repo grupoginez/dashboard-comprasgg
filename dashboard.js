@@ -1,9 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    dashboard.js — Dashboard de Compras Grupo Ginez
    ────────────────────────────────────────────────────────────
-   FINANZAS: este es el ÚNICO archivo a modificar para cambios
-   de visualización, nuevos indicadores o ajustes de lógica.
-   No tocar connector.js ni index.html.
+   Módulo de visualización y lógica del dashboard
    ════════════════════════════════════════════════════════════ */
 
 
