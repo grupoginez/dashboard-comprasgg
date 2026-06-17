@@ -1,7 +1,6 @@
 // ============================================================
 // connector.js -- Conexion MS365 / SharePoint / Graph API
-// GESTIONADO POR: Departamento de TI
-// NO MODIFICAR salvo cambios de credenciales o fuente de datos
+// Módulo de autenticación y conexión a fuentes de datos
 // ============================================================
 
 const CLIENT_ID = "5cbee9d4-0574-49fb-8d63-fcac84bfa44d";
