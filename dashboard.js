@@ -775,3 +775,68 @@ function rebuildFilters(){
   selPriceMats.length = 0;
   updateTrig('pm');
 }
+
+/* ════════════════════════════════════════════════════════════
+   EVENT LISTENERS — reemplaza todos los onclick= del HTML
+   Scripts cargados al final del body, DOM ya listo al ejecutar
+   ════════════════════════════════════════════════════════════ */
+function initEventListeners() {
+  // ── Auth ──
+  document.getElementById('login-btn').addEventListener('click', login);
+  document.getElementById('logout-btn').addEventListener('click', logout);
+
+  // ── Header ──
+  document.getElementById('theme-sw').addEventListener('click', toggleTheme);
+  document.getElementById('freeze-btn').addEventListener('click', toggleFreeze);
+  document.getElementById('export-csv-btn').addEventListener('click', exportCSV);
+
+  // ── Sheet tabs ──
+  document.querySelectorAll('.sheet-tab[data-sheet]').forEach(btn =>
+    btn.addEventListener('click', () => switchSheet(btn.dataset.sheet))
+  );
+
+  // ── Filter dropdowns ──
+  document.querySelectorAll('.mst[data-dd]').forEach(el =>
+    el.addEventListener('click', () => toggleDD(el.dataset.dd))
+  );
+
+  // ── Currency selector ──
+  document.querySelectorAll('.cur-b[data-cur]').forEach(btn =>
+    btn.addEventListener('click', () => setCur(btn.dataset.cur))
+  );
+
+  // ── Quick nav ──
+  document.getElementById('qnav-trigger').addEventListener('click', toggleQNav);
+  document.querySelectorAll('.qnav-item[data-target]').forEach(btn =>
+    btn.addEventListener('click', () => navTo(btn.dataset.target))
+  );
+
+  // ── Reset filters ──
+  document.getElementById('reset-btn').addEventListener('click', resetAll);
+
+  // ── Section collapse toggles ──
+  document.querySelectorAll('.sec-hdr[data-sec]').forEach(el =>
+    el.addEventListener('click', () => toggleSec(el.dataset.sec))
+  );
+
+  // ── Ranking controls ──
+  document.getElementById('rsort-key').addEventListener('change', onSortChange);
+  document.getElementById('rsort-dir').addEventListener('click', toggleSortDir);
+  document.getElementById('rcht').addEventListener('click', cycleRankChartType);
+  document.getElementById('rimp-t').addEventListener('click', cycleRankImpType);
+  document.getElementById('rimp-a').addEventListener('click', cycleRankImpAxis);
+
+  // ── Chart type toggles ──
+  document.getElementById('pvt').addEventListener('click', cyclePvType);
+  document.getElementById('evt').addEventListener('click', cycleEvType);
+
+  // ── Detail pane ──
+  document.getElementById('det-btn').addEventListener('click', toggleDet);
+
+  // ── CSV export buttons ──
+  document.querySelectorAll('[data-tbl]').forEach(btn =>
+    btn.addEventListener('click', () => expTbl(btn.dataset.tbl))
+  );
+}
+
+initEventListeners();
