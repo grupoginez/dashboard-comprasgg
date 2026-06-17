@@ -14,6 +14,17 @@ let ALL_DATA = {}; // populated by initDashboard() from connector.js
    ════════════════════════════════════════════════════════════ */
 const MES_LBL = {1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'};
 
+/* ── SEGURIDAD: helpers de sanitización ── */
+function escHTML(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function safeCsv(v) {
+  const s = String(v ?? '');
+  return /^[=+\-@\t\r]/.test(s) ? `"'${s}"` : `"${s.replace(/"/g,'""')}"`;
+}
+
 function diffDias(d1,d2){
   if(!d1||!d2) return null;
   const a=new Date(d1+'T00:00:00'),b=new Date(d2+'T00:00:00');
@@ -233,8 +244,8 @@ function renderChips(){
   let h='';
   F.yr.forEach(y=>h+=`<div class="chip cy">📅 ${y} <span class="chipx" onclick="rmChip('yr','${y}')">✕</span></div>`);
   F.mo.forEach(m=>h+=`<div class="chip cy">📆 ${MN[+m-1]} <span class="chipx" onclick="rmChip('mo','${m}')">✕</span></div>`);
-  F.pv.forEach(p=>h+=`<div class="chip cp">🏭 ${p} <span class="chipx" onclick="rmChip('pv','${encodeURIComponent(p)}')">✕</span></div>`);
-  F.pr.forEach(p=>h+=`<div class="chip cm">📦 ${p} <span class="chipx" onclick="rmChip('pr','${encodeURIComponent(p)}')">✕</span></div>`);
+  F.pv.forEach(p=>h+=`<div class="chip cp">🏭 ${escHTML(p)} <span class="chipx" onclick="rmChip('pv','${encodeURIComponent(p)}')">✕</span></div>`);
+  F.pr.forEach(p=>h+=`<div class="chip cm">📦 ${escHTML(p)} <span class="chipx" onclick="rmChip('pr','${encodeURIComponent(p)}')">✕</span></div>`);
   document.getElementById('chips').innerHTML=h;
   const n=F.yr.length+F.mo.length+F.pv.length+F.pr.length;
   document.getElementById('fbadge').classList.toggle('show',n>0);
@@ -348,7 +359,7 @@ function renderRankTable(arr){
   sorted.forEach((r,i)=>{
     if(r[sortKey]===0&&i>0) return; // skip true zeros after rank 1 in vertical
     const bw=Math.max(2,Math.round(Math.abs(r[sortKey])/maxV*45));
-    h+=`<tr><td class="tl"><span class="rank">${i+1}</span></td><td class="tl" title="${r.name}">${r.name}<span class="bi" style="width:${bw}px;background:${CL[i%CL.length]}"></span></td><td>${fmt(r.qty_total)}</td>${ums2.includes('KG')?`<td class="kgc">${fmt(r.kg)}</td><td class="kgc">${r.ton.toFixed(3)} T</td>`:''} ${ums2.includes('LT')?`<td class="ltc">${fmt(r.lt)}</td>`:''} ${ums2.includes('PZA')?`<td class="kgc">${fmt(r.pza)}</td>`:''}<td class="nc">${fmtN(r.importe)}</td><td>${fmt(r.avg_q)}</td><td class="nc">${fmtN(r.avg_n)}</td></tr>`;
+    h+=`<tr><td class="tl"><span class="rank">${i+1}</span></td><td class="tl" title="${escHTML(r.name)}">${escHTML(r.name)}<span class="bi" style="width:${bw}px;background:${CL[i%CL.length]}"></span></td><td>${fmt(r.qty_total)}</td>${ums2.includes('KG')?`<td class="kgc">${fmt(r.kg)}</td><td class="kgc">${r.ton.toFixed(3)} T</td>`:''} ${ums2.includes('LT')?`<td class="ltc">${fmt(r.lt)}</td>`:''} ${ums2.includes('PZA')?`<td class="kgc">${fmt(r.pza)}</td>`:''}<td class="nc">${fmtN(r.importe)}</td><td>${fmt(r.avg_q)}</td><td class="nc">${fmtN(r.avg_n)}</td></tr>`;
   });
   const tK=sorted.reduce((a,r)=>a+r.kg,0),tL=sorted.reduce((a,r)=>a+r.lt,0),tI=sorted.reduce((a,r)=>a+r.importe,0);
   h+=`<tr class="tfr"><td></td><td class="tl">TOTAL</td><td>${fmt(tK+tL)}</td><td class="kgc">${fmt(tK)}</td><td class="kgc">${(tK/1000).toFixed(3)} T</td><td class="ltc">${fmt(tL)}</td><td class="nc">${fmtN(tI)}</td><td>—</td><td>—</td></tr></tbody>`;
@@ -395,7 +406,7 @@ function renderMinMax(recs){
   });
   rows.sort((a,b)=>b.mx.qty-a.mx.qty);
   let h=`<thead><tr><th class="tl">Materia</th><th>Máx. Vol.</th><th>Periodo Máx.</th><th>Proveedor Máx.</th><th>Mín. Vol.</th><th>Periodo Mín.</th><th>Proveedor Mín.</th></tr></thead><tbody>`;
-  rows.forEach(r=>{h+=`<tr><td class="tl" title="${r.prod}">${r.prod}</td><td style="color:var(--acc2);font-weight:700">${fmt(r.mx.qty)}</td><td>${r.mx.per}</td><td>${r.mx.prov}</td><td style="color:var(--acc3);font-weight:700">${fmt(r.mn.qty)}</td><td>${r.mn.per}</td><td>${r.mn.prov}</td></tr>`;});
+  rows.forEach(r=>{h+=`<tr><td class="tl" title="${escHTML(r.prod)}">${escHTML(r.prod)}</td><td style="color:var(--acc2);font-weight:700">${fmt(r.mx.qty)}</td><td>${escHTML(r.mx.per)}</td><td>${escHTML(r.mx.prov)}</td><td style="color:var(--acc3);font-weight:700">${fmt(r.mn.qty)}</td><td>${escHTML(r.mn.per)}</td><td>${escHTML(r.mn.prov)}</td></tr>`;});
   document.getElementById('tbl-mm').innerHTML=h+'</tbody>';
 }
 
@@ -442,7 +453,7 @@ function renderEvolProv(recs){
   top8.forEach((p,i)=>{
     const vs=yrs.map(y=>recs.filter(r=>r.proveedor===p&&r.anio===y).reduce((a,r)=>a+r.cantidad,0));
     const ds=vs.slice(1).map((v,j)=>pctD(v,vs[j]));
-    h+=`<tr><td class="tl" style="color:${CL[i]};font-weight:700">${p}</td>${vs.map(v=>`<td>${fmt(v)}</td>`).join('')}${ds.map(d=>d==null?'<td>—</td>':`<td class="${d>=0?'gp':'gn'}">${d>=0?'▲':'▼'}${Math.abs(d).toFixed(1)}%</td>`).join('')}</tr>`;
+    h+=`<tr><td class="tl" style="color:${CL[i]};font-weight:700">${escHTML(p)}</td>${vs.map(v=>`<td>${fmt(v)}</td>`).join('')}${ds.map(d=>d==null?'<td>—</td>':`<td class="${d>=0?'gp':'gn'}">${d>=0?'▲':'▼'}${Math.abs(d).toFixed(1)}%</td>`).join('')}</tr>`;
   });
   document.getElementById('tbl-pvyr').innerHTML=h+'</tbody>';
 }
@@ -459,7 +470,7 @@ function renderEvolProd(recs){
   top10.forEach((p,i)=>{
     const vs=yrs.map(y=>recs.filter(r=>r.producto===p&&r.anio===y).reduce((a,r)=>a+r.cantidad,0));
     const ds=vs.slice(1).map((v,j)=>pctD(v,vs[j]));
-    h+=`<tr><td class="tl" style="color:${CL[i]};font-weight:700">${p}</td>${vs.map(v=>`<td>${fmt(v)}</td>`).join('')}${ds.map(d=>d==null?'<td>—</td>':`<td class="${d>=0?'gp':'gn'}">${d>=0?'▲':'▼'}${Math.abs(d).toFixed(1)}%</td>`).join('')}</tr>`;
+    h+=`<tr><td class="tl" style="color:${CL[i]};font-weight:700">${escHTML(p)}</td>${vs.map(v=>`<td>${fmt(v)}</td>`).join('')}${ds.map(d=>d==null?'<td>—</td>':`<td class="${d>=0?'gp':'gn'}">${d>=0?'▲':'▼'}${Math.abs(d).toFixed(1)}%</td>`).join('')}</tr>`;
   });
   document.getElementById('tbl-pryr').innerHTML=h+'</tbody>';
 }
@@ -528,7 +539,7 @@ function renderPrices(recs){
       const first=prices[0], last=prices[prices.length-1];
       const vari=first>0?(last-first)/first*100:null;
       const sym=cur==='USD'?'US$':'$';
-      h+=`<tr><td class="tl" title="${prod}">${prod}</td><td><span style="color:${cur==='USD'?'var(--acc5)':'var(--acc4)'};font-weight:700">${cur}</span></td><td>${sym}${mn.toFixed(4)}</td><td>${sym}${mx2.toFixed(4)}</td><td>${sym}${wavg.toFixed(4)}</td><td>${sym}${last.toFixed(4)}</td><td class="${vari==null?'':vari>=0?'gp':'gn'}">${vari==null?'—':(vari>=0?'▲':'▼')+Math.abs(vari).toFixed(1)+'%'}</td><td>${rs.length}</td></tr>`;
+      h+=`<tr><td class="tl" title="${escHTML(prod)}">${escHTML(prod)}</td><td><span style="color:${cur==='USD'?'var(--acc5)':'var(--acc4)'};font-weight:700">${cur}</span></td><td>${sym}${mn.toFixed(4)}</td><td>${sym}${mx2.toFixed(4)}</td><td>${sym}${wavg.toFixed(4)}</td><td>${sym}${last.toFixed(4)}</td><td class="${vari==null?'':vari>=0?'gp':'gn'}">${vari==null?'—':(vari>=0?'▲':'▼')+Math.abs(vari).toFixed(1)+'%'}</td><td>${rs.length}</td></tr>`;
     });
   });
   document.getElementById('tbl-price').innerHTML=h+'</tbody>';
@@ -546,7 +557,7 @@ function renderPrices(recs){
       });
       if(yearData.every(v=>v==null)) return;
       const sym=cur==='USD'?'US$':'$';
-      let row=`<tr><td class="tl" title="${prod}">${prod}</td><td><span style="color:${cur==='USD'?'var(--acc5)':'var(--acc4)'};font-weight:700">${cur}</span></td>`;
+      let row=`<tr><td class="tl" title="${escHTML(prod)}">${escHTML(prod)}</td><td><span style="color:${cur==='USD'?'var(--acc5)':'var(--acc4)'};font-weight:700">${cur}</span></td>`;
       yearData.forEach((v,j)=>{
         const prev=yearData[j-1];
         const d=v!=null&&prev!=null?pctD(v,prev):null;
@@ -612,13 +623,13 @@ function renderVariacion(recs){
   let h=`<thead><tr><th class="tl">Proveedor</th><th>OC</th><th>Entregado</th><th>Diferencia</th><th>Cumplimiento</th><th>Importe</th></tr></thead><tbody>`;
   parr.sort((a,b)=>b.oc-a.oc).forEach(r=>{
     const cl=r.cumpl===0?'p-no':r.cumpl>=100&&r.cumpl<=100?'p-ok':r.cumpl>100?'p-ov':'p-pa';
-    h+=`<tr><td class="tl">${r.name}</td><td>${fmt(r.oc)}</td><td>${fmt(r.ent)}</td><td class="${r.ent>=r.oc?'gp':'gn'}">${r.ent>=r.oc?'+':''}${fmt(r.ent-r.oc)}</td><td><span class="pill ${cl}">${r.cumpl.toFixed(1)}%</span></td><td class="nc">${fmtN(r.n)}</td></tr>`;
+    h+=`<tr><td class="tl">${escHTML(r.name)}</td><td>${fmt(r.oc)}</td><td>${fmt(r.ent)}</td><td class="${r.ent>=r.oc?'gp':'gn'}">${r.ent>=r.oc?'+':''}${fmt(r.ent-r.oc)}</td><td><span class="pill ${cl}">${r.cumpl.toFixed(1)}%</span></td><td class="nc">${fmtN(r.n)}</td></tr>`;
   });
   document.getElementById('tbl-vsum').innerHTML=h+'</tbody>';
   let dh=`<thead><tr><th class="tl">Folio</th><th class="tl">Materia</th><th class="tl">Proveedor</th><th>Cant. OC</th><th>Cant. Ent.</th><th>Dif.</th><th>Cumpl %</th><th>Fecha OC</th><th>Fecha Ent.</th><th>Días</th><th>Moneda</th><th>TC</th><th>Importe</th></tr></thead><tbody>`;
   vld.slice(0,600).forEach(r=>{
     const cl=r.cumpl_pct===0?'p-no':r.cumpl_pct>=100&&r.cumpl_pct<=100?'p-ok':r.cumpl_pct>100?'p-ov':'p-pa';
-    dh+=`<tr><td class="tl">${r.folio}</td><td class="tl" title="${r.producto}">${r.producto}</td><td class="tl">${r.proveedor}</td><td>${fmt(r.cant_oc)}</td><td>${fmt(r.cantidad)}</td><td class="${r.cantidad>=r.cant_oc?'gp':'gn'}">${r.cantidad>=r.cant_oc?'+':''}${fmt(r.var_cant)}</td><td><span class="pill ${cl}">${r.cumpl_pct.toFixed(1)}%</span></td><td>${r.fecha_oc}</td><td>${r.fecha_ent}</td><td>${r.dias_ent??'—'}</td><td>${r.moneda}</td><td>${r.tc}</td><td class="nc">${fmtN(r.importe)}</td></tr>`;
+    dh+=`<tr><td class="tl">${escHTML(r.folio)}</td><td class="tl" title="${escHTML(r.producto)}">${escHTML(r.producto)}</td><td class="tl">${escHTML(r.proveedor)}</td><td>${fmt(r.cant_oc)}</td><td>${fmt(r.cantidad)}</td><td class="${r.cantidad>=r.cant_oc?'gp':'gn'}">${r.cantidad>=r.cant_oc?'+':''}${fmt(r.var_cant)}</td><td><span class="pill ${cl}">${r.cumpl_pct.toFixed(1)}%</span></td><td>${escHTML(r.fecha_oc)}</td><td>${escHTML(r.fecha_ent)}</td><td>${r.dias_ent??'—'}</td><td>${escHTML(r.moneda)}</td><td>${r.tc}</td><td class="nc">${fmtN(r.importe)}</td></tr>`;
   });
   document.getElementById('tbl-vdet').innerHTML=dh+'</tbody>';
 }
@@ -685,14 +696,14 @@ function renderEconomico(recs){
   let h=`<thead><tr><th class="tl">Materia</th><th>MXN orig.</th><th>Reg. MXN</th><th>USD orig.</th><th>Reg. USD</th><th style="font-size:9px">Monedas</th></tr></thead><tbody>`;
   parr.forEach(r=>{
     const dual=r.n_m>0&&r.n_u>0;
-    h+=`<tr${dual?' style="background:rgba(92,124,250,.06)"':''}><td class="tl" title="${r.name}">${r.name}${dual?' <span class="pill" style="background:rgba(92,124,250,.15);color:var(--accent);font-size:8px">2 monedas</span>':''}</td><td class="nc">${fmtN(r.mxn,'MXN')}</td><td>${r.n_m}</td><td style="color:var(--acc5)">${fmtN(r.usd,'USD')}</td><td>${r.n_u}</td><td style="font-size:9px;color:var(--text3)">${dual?'MXN + USD':r.n_m>0?'MXN':'USD'}</td></tr>`;
+    h+=`<tr${dual?' style="background:rgba(92,124,250,.06)"':''}><td class="tl" title="${escHTML(r.name)}">${escHTML(r.name)}${dual?' <span class="pill" style="background:rgba(92,124,250,.15);color:var(--accent);font-size:8px">2 monedas</span>':''}</td><td class="nc">${fmtN(r.mxn,'MXN')}</td><td>${r.n_m}</td><td style="color:var(--acc5)">${fmtN(r.usd,'USD')}</td><td>${r.n_u}</td><td style="font-size:9px;color:var(--text3)">${dual?'MXN + USD':r.n_m>0?'MXN':'USD'}</td></tr>`;
   });
   document.getElementById('tbl-eco').innerHTML=h+'</tbody>';
 }
 
 /* ── EXPORT ── */
-function expTbl(id){ const t=document.getElementById(id); if(!t) return; const rows=[...t.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(c=>'"'+(c.textContent.trim().replace(/"/g,'""'))+'"').join(',')); const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.join('\n')); a.download=`MP_${id}_${new Date().toISOString().slice(0,10)}.csv`; a.click(); }
-function exportCSV(){ const recs=filtered(); const hdrs=['periodo','anio','mes','proveedor','producto','um','cantidad','cant_oc','importe','total_neto','moneda','tc','folio','var_cant','cumpl_pct','dias_ent','fecha_oc','fecha_ent','precio_u','cant_pendiente']; const rows=[hdrs.join(','),...recs.map(r=>hdrs.map(h=>JSON.stringify(r[h]??'')).join(','))]; const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.join('\n')); a.download=`MP_datos_${new Date().toISOString().slice(0,10)}.csv`; a.click(); }
+function expTbl(id){ const t=document.getElementById(id); if(!t) return; const rows=[...t.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(c=>safeCsv(c.textContent.trim())).join(',')); const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.join('\n')); a.download=`MP_${id}_${new Date().toISOString().slice(0,10)}.csv`; a.click(); }
+function exportCSV(){ const recs=filtered(); const hdrs=['periodo','anio','mes','proveedor','producto','um','cantidad','cant_oc','importe','total_neto','moneda','tc','folio','var_cant','cumpl_pct','dias_ent','fecha_oc','fecha_ent','precio_u','cant_pendiente']; const rows=[hdrs.map(h=>safeCsv(h)).join(','),...recs.map(r=>hdrs.map(h=>safeCsv(r[h]??'')).join(','))]; const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.join('\n')); a.download=`MP_datos_${new Date().toISOString().slice(0,10)}.csv`; a.click(); }
 
 
 /* ── QUICK NAV ── */
