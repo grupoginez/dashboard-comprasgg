@@ -177,7 +177,18 @@ const pctD=(a,b)=>b===0?null:(a-b)/b*100;
 function buildMS(key,opts,ph){
   const dd=document.getElementById('msd-'+key);
   dd._opts=opts; dd._ph=ph;
-  dd.innerHTML=`<div class="msd-s"><input type="text" placeholder="Buscar..." oninput="searchOpts('${key}',this.value)"></div><div class="msd-l" id="msl-${key}"></div><div class="msd-f"><button class="btn-sm" onclick="closeDD('${key}')">Cerrar</button></div>`;
+  // createElement para evitar inline handlers bloqueados por CSP
+  const searchDiv = document.createElement('div'); searchDiv.className = 'msd-s';
+  const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'Buscar...';
+  inp.addEventListener('input', () => searchOpts(key, inp.value));
+  searchDiv.appendChild(inp);
+  const listDiv = document.createElement('div'); listDiv.className = 'msd-l'; listDiv.id = 'msl-'+key;
+  const footerDiv = document.createElement('div'); footerDiv.className = 'msd-f';
+  const closeBtn = document.createElement('button'); closeBtn.className = 'btn-sm'; closeBtn.textContent = 'Cerrar';
+  closeBtn.addEventListener('click', () => closeDD(key));
+  footerDiv.appendChild(closeBtn);
+  dd.innerHTML = '';
+  dd.appendChild(searchDiv); dd.appendChild(listDiv); dd.appendChild(footerDiv);
   renderOpts(key,opts,'');
 }
 function renderOpts(key,opts,q){
@@ -238,13 +249,21 @@ function resetAll(){
 }
 
 /* ── CHIPS ── */
+function makeChip(cls, label, key, val) {
+  const div = document.createElement('div'); div.className = 'chip ' + cls;
+  div.innerHTML = label; // texto estático, sin handlers
+  const x = document.createElement('span'); x.className = 'chipx'; x.textContent = '✕';
+  x.addEventListener('click', () => rmChip(key, val));
+  div.appendChild(x);
+  return div;
+}
 function renderChips(){
-  let h='';
-  F.yr.forEach(y=>h+=`<div class="chip cy">📅 ${y} <span class="chipx" onclick="rmChip('yr','${y}')">✕</span></div>`);
-  F.mo.forEach(m=>h+=`<div class="chip cy">📆 ${MN[+m-1]} <span class="chipx" onclick="rmChip('mo','${m}')">✕</span></div>`);
-  F.pv.forEach(p=>h+=`<div class="chip cp">🏭 ${escHTML(p)} <span class="chipx" onclick="rmChip('pv','${encodeURIComponent(p)}')">✕</span></div>`);
-  F.pr.forEach(p=>h+=`<div class="chip cm">📦 ${escHTML(p)} <span class="chipx" onclick="rmChip('pr','${encodeURIComponent(p)}')">✕</span></div>`);
-  document.getElementById('chips').innerHTML=h;
+  const container = document.getElementById('chips');
+  container.innerHTML = '';
+  F.yr.forEach(y  => container.appendChild(makeChip('cy', `📅 ${y} `,           'yr', y)));
+  F.mo.forEach(m  => container.appendChild(makeChip('cy', `📆 ${MN[+m-1]} `,    'mo', m)));
+  F.pv.forEach(p  => container.appendChild(makeChip('cp', `🏭 ${escHTML(p)} `,  'pv', p)));
+  F.pr.forEach(p  => container.appendChild(makeChip('cm', `📦 ${escHTML(p)} `,  'pr', p)));
   const n=F.yr.length+F.mo.length+F.pv.length+F.pr.length;
   document.getElementById('fbadge').classList.toggle('show',n>0);
   if(n) document.getElementById('fbadge-n').textContent=n;
@@ -352,16 +371,41 @@ function renderRankTable(arr){
     {key:'importe',lbl:`Importe ${impLbl()}`},
     {key:'avg_q',lbl:'P/Mes Vol.'},{key:'avg_n',lbl:'P/Mes $'}
   ];
-  let h=`<thead><tr><th class="tl">#</th><th class="tl" onclick="setSortKey('qty_total')" style="cursor:pointer">Materia</th>${cols.map(c=>`<th onclick="setSortKey('${c.key}')" style="cursor:pointer;white-space:nowrap">${c.lbl}${sortKey===c.key?(sortDir===-1?' ▼':' ▲'):' ⇅'}</th>`).join('')}</tr></thead><tbody>`;
+  const tbl = document.getElementById('tbl-rank');
+  tbl.innerHTML = '';
+
+  // ── thead: createElement para evitar inline handlers bloqueados por CSP ──
+  const thead = document.createElement('thead');
+  const hrow = document.createElement('tr');
+  const th0 = document.createElement('th'); th0.className = 'tl'; th0.textContent = '#';
+  hrow.appendChild(th0);
+  const thMat = document.createElement('th');
+  thMat.className = 'tl'; thMat.style.cursor = 'pointer'; thMat.textContent = 'Materia';
+  thMat.addEventListener('click', () => setSortKey('qty_total'));
+  hrow.appendChild(thMat);
+  cols.forEach(c => {
+    const th = document.createElement('th');
+    th.style.cssText = 'cursor:pointer;white-space:nowrap';
+    th.textContent = c.lbl + (sortKey === c.key ? (sortDir === -1 ? ' ▼' : ' ▲') : ' ⇅');
+    th.addEventListener('click', () => setSortKey(c.key));
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow);
+  tbl.appendChild(thead);
+
+  // ── tbody: innerHTML es seguro (sin event handlers en filas de datos) ──
+  let rows = '';
   // Start ranking from 1 (top is index 0)
   sorted.forEach((r,i)=>{
     if(r[sortKey]===0&&i>0) return; // skip true zeros after rank 1 in vertical
     const bw=Math.max(2,Math.round(Math.abs(r[sortKey])/maxV*45));
-    h+=`<tr><td class="tl"><span class="rank">${i+1}</span></td><td class="tl" title="${escHTML(r.name)}">${escHTML(r.name)}<span class="bi" style="width:${bw}px;background:${CL[i%CL.length]}"></span></td><td>${fmt(r.qty_total)}</td>${ums2.includes('KG')?`<td class="kgc">${fmt(r.kg)}</td><td class="kgc">${r.ton.toFixed(3)} T</td>`:''} ${ums2.includes('LT')?`<td class="ltc">${fmt(r.lt)}</td>`:''} ${ums2.includes('PZA')?`<td class="kgc">${fmt(r.pza)}</td>`:''}<td class="nc">${fmtN(r.importe)}</td><td>${fmt(r.avg_q)}</td><td class="nc">${fmtN(r.avg_n)}</td></tr>`;
+    rows+=`<tr><td class="tl"><span class="rank">${i+1}</span></td><td class="tl" title="${escHTML(r.name)}">${escHTML(r.name)}<span class="bi" style="width:${bw}px;background:${CL[i%CL.length]}"></span></td><td>${fmt(r.qty_total)}</td>${ums2.includes('KG')?`<td class="kgc">${fmt(r.kg)}</td><td class="kgc">${r.ton.toFixed(3)} T</td>`:''} ${ums2.includes('LT')?`<td class="ltc">${fmt(r.lt)}</td>`:''} ${ums2.includes('PZA')?`<td class="kgc">${fmt(r.pza)}</td>`:''}<td class="nc">${fmtN(r.importe)}</td><td>${fmt(r.avg_q)}</td><td class="nc">${fmtN(r.avg_n)}</td></tr>`;
   });
   const tK=sorted.reduce((a,r)=>a+r.kg,0),tL=sorted.reduce((a,r)=>a+r.lt,0),tI=sorted.reduce((a,r)=>a+r.importe,0);
-  h+=`<tr class="tfr"><td></td><td class="tl">TOTAL</td><td>${fmt(tK+tL)}</td><td class="kgc">${fmt(tK)}</td><td class="kgc">${(tK/1000).toFixed(3)} T</td><td class="ltc">${fmt(tL)}</td><td class="nc">${fmtN(tI)}</td><td>—</td><td>—</td></tr></tbody>`;
-  document.getElementById('tbl-rank').innerHTML=h;
+  rows+=`<tr class="tfr"><td></td><td class="tl">TOTAL</td><td>${fmt(tK+tL)}</td><td class="kgc">${fmt(tK)}</td><td class="kgc">${(tK/1000).toFixed(3)} T</td><td class="ltc">${fmt(tL)}</td><td class="nc">${fmtN(tI)}</td><td>—</td><td>—</td></tr>`;
+  const tbody = document.createElement('tbody');
+  tbody.innerHTML = rows;
+  tbl.appendChild(tbody);
 }
 function renderRankCharts(arr){
   const sorted=[...arr].sort((a,b)=>sortDir*(b[sortKey]-a[sortKey]));
