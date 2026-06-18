@@ -192,7 +192,7 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
   .kpis{grid-template-columns:1fr 1fr}
 
   /* Tablas: scroll horizontal táctil en iOS Safari */
-  .tw{overflow-x:scroll;-webkit-overflow-scrolling:touch}
+  .tw{overflow-x:scroll;overflow-y:visible;max-height:none!important;-webkit-overflow-scrolling:touch}
   table{min-width:520px}
 }
 
@@ -275,6 +275,7 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
       <span class="sw-lbl" id="sw-l">☀️ Claro</span>
     </div>
     <button class="btn-hdr" id="freeze-btn">📌 Fijar filtros</button>
+    <button class="btn-hdr" id="reload-btn" title="Forzar recarga desde SharePoint">↺ Actualizar</button>
     <button class="btn-hdr" id="export-csv-btn">⬇ CSV</button>
   </div>
 </header>
