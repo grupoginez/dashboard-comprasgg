@@ -832,6 +832,7 @@ function initEventListeners() {
   // ── Header ──
   document.getElementById('theme-sw').addEventListener('click', toggleTheme);
   document.getElementById('freeze-btn').addEventListener('click', toggleFreeze);
+  document.getElementById('reload-btn').addEventListener('click', reloadData);
   document.getElementById('export-csv-btn').addEventListener('click', exportCSV);
 
   // ── Sheet tabs ──
