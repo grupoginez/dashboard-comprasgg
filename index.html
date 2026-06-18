@@ -163,6 +163,35 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
 .price-tag-mxn{color:var(--acc4);font-weight:700}
 .price-tag-usd{color:var(--acc5);font-weight:700}
 
+/* ── MOBILE (≤ 600 px) ── */
+@media(max-width:600px){
+  /* Header: dos filas en lugar de una */
+  .hdr{height:auto;min-height:44px;padding:6px 10px;flex-wrap:wrap;row-gap:4px}
+  .hdr h1{font-size:12px}
+  .hdr-sub{display:none}
+  .hdr-r{margin-left:0;width:100%;justify-content:flex-end;flex-wrap:wrap;gap:4px}
+  .btn-hdr{padding:4px 8px;font-size:9px;gap:2px}
+  .uname{max-width:80px}
+  .fbadge{display:none!important}
+
+  /* Sheet tabs: más compactas, ocultar contadores */
+  .sheet-tabs{position:relative;top:auto}
+  .sheet-tab{padding:8px 10px;font-size:11px}
+  .sheet-tab-count{display:none}
+
+  /* Filter bar y chips: sin sticky en móvil */
+  .fbar{position:relative;top:auto;padding:8px 10px}
+  .chips{position:relative;top:auto}
+
+  /* KPI sticky: también relativo en móvil */
+  #wrap-kpi{position:relative!important;top:auto!important;box-shadow:none!important}
+
+  /* Contenido general */
+  .page{padding:10px}
+  .g2,.g3{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+}
+
 /* ── QUICK NAV ── */
 .qnav-wrap{position:relative;flex-shrink:0}
 .qnav-trigger{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--inp);border:1px solid var(--inp-b);border-radius:var(--r8);cursor:pointer;user-select:none;transition:border .15s,color .15s;white-space:nowrap;font-size:11px;font-weight:700;color:var(--text2)}
