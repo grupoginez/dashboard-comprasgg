@@ -132,7 +132,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13
 .cs{font-size:10px;color:var(--text3);margin-top:2px}
 .ca{display:flex;gap:5px;align-items:center;flex-shrink:0;flex-wrap:wrap}
 /* Table */
-.tw{overflow-x:auto;overflow-y:auto}
+.tw{overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;font-size:11px}
 thead{position:sticky;top:0;z-index:2}
 thead th{background:var(--card2);color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
@@ -190,6 +190,10 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
   .page{padding:10px}
   .g2,.g3{grid-template-columns:1fr}
   .kpis{grid-template-columns:1fr 1fr}
+
+  /* Tablas: scroll horizontal táctil en iOS Safari */
+  .tw{overflow-x:scroll;-webkit-overflow-scrolling:touch}
+  table{min-width:520px}
 }
 
 /* ── QUICK NAV ── */
