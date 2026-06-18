@@ -8,7 +8,7 @@ const TENANT_ID = "d08c56ca-3b55-42db-b365-359cf1503e4e";
 
 const msalCfg = {
   auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/" + TENANT_ID, redirectUri: "https://grupoginez.github.io/dashboard-comprasgg/" },
-  cache: { cacheLocation: "sessionStorage" }
+  cache: { cacheLocation: "localStorage" }
 };
 const msalApp = new msal.PublicClientApplication(msalCfg);
 
@@ -55,6 +55,33 @@ const SHEET_NAMES = ['MP', 'PIGMENTOS', 'FRAGANCIAS', 'PIPAS', 'OTROS'];
 // RAW_BY_SHEET = { MP: [...], PIGMENTOS: [...], FRAGANCIAS: [...], PIPAS: [...], OTROS: [...] }
 let RAW_BY_SHEET = {};
 
+// -- CACHÉ LOCAL --
+const CACHE_DATA_KEY = 'dcc_data_v1';
+const CACHE_META_KEY = 'dcc_meta_v1';
+
+function cacheLoad() {
+  try {
+    const meta = JSON.parse(localStorage.getItem(CACHE_META_KEY) || 'null');
+    const data = JSON.parse(localStorage.getItem(CACHE_DATA_KEY) || 'null');
+    return (meta && data) ? { meta, data } : null;
+  } catch(e) { return null; }
+}
+
+function cacheSave(lastModified, rawBySheet) {
+  try {
+    localStorage.setItem(CACHE_META_KEY, JSON.stringify({ lastModified }));
+    localStorage.setItem(CACHE_DATA_KEY, JSON.stringify(rawBySheet));
+  } catch(e) {
+    // localStorage lleno u otro error — ignorar, seguirá funcionando sin caché
+    console.warn('No se pudo guardar caché:', e.message);
+  }
+}
+
+function cacheInvalidate() {
+  localStorage.removeItem(CACHE_DATA_KEY);
+  localStorage.removeItem(CACHE_META_KEY);
+}
+
 async function getGraphToken() {
   const req = { scopes: ['https://graph.microsoft.com/Files.Read.All'], account: msalApp.getAllAccounts()[0] };
   try {
@@ -66,6 +93,36 @@ async function getGraphToken() {
   }
 }
 
+async function getFileLastModified(token) {
+  const res = await fetch(
+    'https://graph.microsoft.com/v1.0/sites/' + SITE_ID + '/drives/' + DRIVE_ID + '/items/' + FILE_ID + '?$select=lastModifiedDateTime',
+    { headers: { Authorization: 'Bearer ' + token } }
+  );
+  const meta = await res.json();
+  return meta.lastModifiedDateTime || null;
+}
+
+async function fetchAllSheets(token, status) {
+  const result = {};
+  let total = 0;
+  for (const sheet of SHEET_NAMES) {
+    status.textContent = 'Leyendo hoja ' + sheet + '...';
+    const res = await fetch(
+      'https://graph.microsoft.com/v1.0/sites/' + SITE_ID + '/drives/' + DRIVE_ID + '/items/' + FILE_ID + '/workbook/worksheets/' + sheet + '/usedRange',
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    const data = await res.json();
+    if (!data.values) {
+      console.error('Error leyendo hoja', sheet, data.error);
+      result[sheet] = [];
+      continue;
+    }
+    result[sheet] = parseExcelData(data.values);
+    total += result[sheet].length;
+  }
+  return { result, total };
+}
+
 async function loadExcelData() {
   const status = document.getElementById('load-status');
   try {
@@ -73,34 +130,40 @@ async function loadExcelData() {
     const token = await getGraphToken();
     if (!token) return;
 
-    let totalRegistros = 0;
+    // Llamada ligera: solo metadatos del archivo
+    const lastModified = await getFileLastModified(token);
+    const cached = cacheLoad();
 
-    for (const sheet of SHEET_NAMES) {
-      status.textContent = 'Leyendo hoja ' + sheet + '...';
-      const sheetRes = await fetch(
-        'https://graph.microsoft.com/v1.0/sites/' + SITE_ID + '/drives/' + DRIVE_ID + '/items/' + FILE_ID + '/workbook/worksheets/' + sheet + '/usedRange',
-        { headers: { Authorization: 'Bearer ' + token } }
-      );
-      const sheetData = await sheetRes.json();
-
-      if (!sheetData.values) {
-        console.error('Error leyendo hoja', sheet, sheetData.error);
-        RAW_BY_SHEET[sheet] = [];
-        continue;
-      }
-
-      RAW_BY_SHEET[sheet] = parseExcelData(sheetData.values);
-      totalRegistros += RAW_BY_SHEET[sheet].length;
+    if (lastModified && cached && cached.meta.lastModified === lastModified) {
+      // Archivo sin cambios → usar caché
+      RAW_BY_SHEET = cached.data;
+      const total = Object.values(RAW_BY_SHEET).reduce((s, a) => s + a.length, 0);
+      const ts = new Date(lastModified).toLocaleString('es-MX', { dateStyle:'short', timeStyle:'short' });
+      status.textContent = total + ' registros (caché · actualizado ' + ts + ')';
+      setTimeout(() => { status.textContent = ''; }, 4000);
+      initDashboard();
+      return;
     }
 
-    status.textContent = totalRegistros + ' registros cargados desde SharePoint';
-    setTimeout(function() { status.textContent = ''; }, 3000);
+    // Archivo nuevo o sin caché → fetch completo
+    const { result, total } = await fetchAllSheets(token, status);
+    RAW_BY_SHEET = result;
+    if (lastModified) cacheSave(lastModified, RAW_BY_SHEET);
+
+    status.textContent = total + ' registros cargados desde SharePoint';
+    setTimeout(() => { status.textContent = ''; }, 3000);
     initDashboard();
 
   } catch(err) {
     status.textContent = 'Error: ' + err.message;
     console.error(err);
   }
+}
+
+// Exponer para el botón "Actualizar" manual (fuerza re-fetch ignorando caché)
+function reloadData() {
+  cacheInvalidate();
+  loadExcelData();
 }
 
 function toDateStr(val) {
