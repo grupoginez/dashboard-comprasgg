@@ -190,6 +190,8 @@ tbody td.tl{text-align:left;max-width:155px;overflow:hidden;text-overflow:ellips
   .page{padding:10px}
   .g2,.g3{grid-template-columns:1fr}
   .kpis{grid-template-columns:1fr 1fr}
+  /* Evita que los items de grid se expandan más allá de su columna (min-width:auto CSS Grid default) */
+  .g2>*,.g3>*,.kpis>*{min-width:0}
 
   /* Tablas: scroll horizontal táctil en iOS Safari */
   .tw{overflow-x:scroll;overflow-y:visible;max-height:none!important;-webkit-overflow-scrolling:touch}
